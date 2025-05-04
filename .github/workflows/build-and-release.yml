@@ -18,11 +18,12 @@ jobs:
         with:
           go-version: "stable"
 
-      - name: Build binaries
+      - name: Build binary
         run: |
+          rm -rf dist
           mkdir -p dist/{{ matrix.arch }}
-          GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 go build --flags="-s -x" -o dist/{{ matrix.arch }}/cicd-utilities cmd/cicd
+          GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 go build -ldflags="-s -w" -o dist/{{ matrix.arch }}/cicd-utilities cmd/cicd
 
-      - name: Tar binaries
+      - name: Tar binary
         run: |
-          tar -czf dist/cicd-utilities-{{ matrix.arch }}.tar.gz -C dist/{{ matrix.arch }} cicd-utilities
+          tar -czf dist/cicd-utilities-{{ matrix.arch }}.tar.gz -C dist/{{ matrix.arch }} *
