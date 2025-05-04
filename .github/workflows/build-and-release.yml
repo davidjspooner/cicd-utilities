@@ -25,7 +25,7 @@ jobs:
           ls -la
           rm -rf dist
           mkdir -p dist/{{ matrix.arch }}
-          GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 go build -ldflags="-s -w" -o ./dist/${{ matrix.arch }}/cicd-utilities ./cmd/cicd-utilitiies
+          GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 go build -ldflags="-s -w" -o ./dist/cicd-utilities-${{ matrix.arch }}/cicd-utilities ./cmd/cicd-utilitiies
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4.6.2
@@ -33,7 +33,7 @@ jobs:
           name: cicd-utilities-${{ matrix.arch }}
           path: dist/cicd-utilities-${{ matrix.arch }}/
           retention-days: 1
-          
+
       - name: List structure
         run: |
           echo "Listing structure"
