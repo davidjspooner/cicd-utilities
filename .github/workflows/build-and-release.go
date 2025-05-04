@@ -1,0 +1,40 @@
+name: Build and Release
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "stable"
+
+      - name: Build binaries
+        run: |
+          mkdir -p dist/{{ matrix.arch }}
+          GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 go build -=flags="-s -x" -o dist/{{ matrix.arch }}/cicd-utilities cmd/cicd
+
+	  - name: Tar binaries
+		run: |
+		  tar -czf dist/cicd-utilities-{{ matrix.arch }}.tar.gz -C dist/{{ matrix.arch }} cicd-utilities
+
+	  - name: Create release
+		id: create_release
+		uses: softprops/action-gh-release@v1
+		with:
+		  tag_name: v0.0.1
+		  release_name: Release v0.0.1
+		  body: |
+		    ## Release v0.0.1
+		    - Initial release of cicd-utilities
+			
+
