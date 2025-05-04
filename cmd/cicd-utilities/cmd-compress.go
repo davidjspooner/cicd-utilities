@@ -20,8 +20,8 @@ func compressCommand(args []string) error {
 	// Check if the correct number of arguments is provided
 
 	compressCommand := flag.NewFlagSet("compress", flag.ExitOnError)
-	format := flag.String("format", "", "Format to compress the files (zip, tar.gz)")
-	replace := flag.Bool("replace", false, "Remove original files after compression")
+	format := compressCommand.String("format", "", "Format to compress the files (zip, tar.gz)")
+	replace := compressCommand.Bool("replace", false, "Remove original files after compression")
 
 	compressCommand.Parse(args)
 

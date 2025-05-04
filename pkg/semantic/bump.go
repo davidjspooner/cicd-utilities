@@ -11,7 +11,7 @@ type BumpArray []Bump
 
 // Bump levels
 var Bumps = BumpArray{
-	{Level: "major", Hints: []string{"BREAKING CHANGE"}},
+	{Level: "major", Hints: []string{"BREAKING CHANGE", "breaking:"}},
 	{Level: "minor", Hints: []string{"feat:"}},
 	{Level: "patch", Hints: []string{"fix:"}},
 }

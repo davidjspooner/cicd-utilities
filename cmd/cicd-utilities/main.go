@@ -40,27 +40,34 @@ func main() {
 	mainCommand := flag.NewFlagSet("main", flag.ExitOnError)
 	verbosePtr := mainCommand.Bool("verbose", false, "Enable verbose output")
 	help := mainCommand.Bool("help", false, "Display help information")
-	mainCommand.Parse(os.Args[1:])
+
+	err := mainCommand.Parse(os.Args[1:])
+	if err != nil {
+		fmt.Printf("Error parsing arguments: %v\n", err)
+		os.Exit(1)
+	}
+
 	verbose = *verbosePtr
 	if *help {
-		helpCommand(os.Args[1:])
+		helpCommand(os.Args)
 		os.Exit(0)
 	}
 
-	if len(mainCommand.Args()) < 1 {
+	remainingArgs := mainCommand.Args()
+	if len(remainingArgs) < 1 {
 		fmt.Println("Usage: cicd-utility --verbose <command> <args_and_options>")
-		helpCommand(os.Args[:])
+		helpCommand(remainingArgs)
 		os.Exit(1)
 	}
-	command := os.Args[1]
+	command := remainingArgs[0]
 	if cmd, exists := Commands[command]; exists {
-		if err := cmd.Execute(mainCommand.Args()[1:]); err != nil {
+		if err := cmd.Execute(remainingArgs[1:]); err != nil {
 			fmt.Printf("Error executing command %s: %v\n", command, err)
 			os.Exit(1)
 		}
 	} else {
 		fmt.Printf("Unknown command: %s\n", command)
-		helpCommand(os.Args[:])
+		helpCommand(os.Args)
 		os.Exit(1)
 	}
 }

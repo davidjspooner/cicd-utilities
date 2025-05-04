@@ -15,7 +15,7 @@ import (
 func init() {
 	registerCommand(
 		"update-github-pr-meta",
-		"Updates GitHub PR metadata based on commit messages",
+		"Updates GitHub PR title based on commit messages (including fix:, feat:, breaking:)",
 		executeUpdateGithubPRMeta,
 	)
 }
@@ -49,23 +49,30 @@ func executeUpdateGithubPRMeta(args []string) error {
 	// Determine version bump
 	bump, err := semantic.Bumps.GetVersionBump(commitMessages)
 	if err != nil {
-		return fmt.Errorf("error determining version bump: %v", err)
+		return fmt.Errorf("error determining bump : %v", err)
 	}
 
-	// Compose new title and body
+	//get the current PR title
+	prTitle, err := getPullRequestTitle(*prNumber, token, repo)
+	if err != nil {
+		return fmt.Errorf("error fetching PR title: %v", err)
+	}
+	if strings.Contains(prTitle, bump) {
+		fmt.Printf("PR #%s already has the bump %s in the title.\n", *prNumber, bump)
+		return nil
+	}
+
+	// Compose new title
 	newTitle := fmt.Sprintf("%s: update based on commits", bump)
-	newBody := strings.Join(commitMessages, "\n")
 
 	if *dryRun {
 		fmt.Println("Dry run enabled.")
 		fmt.Printf("Would update PR #%s with title: %s\n", *prNumber, newTitle)
-		fmt.Println("New body:")
-		fmt.Println(newBody)
 		return nil
 	}
 
 	// Update PR via GitHub API
-	return updatePullRequest(*prNumber, token, repo, newTitle, newBody)
+	return updatePullRequest(*prNumber, token, repo, newTitle)
 }
 
 func getCommitMessages(prNumber, token, repo string) []string {
@@ -96,13 +103,12 @@ func getCommitMessages(prNumber, token, repo string) []string {
 	return messages
 }
 
-func updatePullRequest(prNumber, token, repo, title, body string) error {
+func updatePullRequest(prNumber, token, repo, title string) error {
 	url := fmt.Sprintf("https://api.github.com/repos/%s/pulls/%s", repo, prNumber)
 
 	pr := struct {
 		Title string `json:"title"`
-		Body  string `json:"body"`
-	}{Title: title, Body: body}
+	}{Title: title}
 	data, _ := json.Marshal(pr)
 
 	req, _ := http.NewRequest("PATCH", url, strings.NewReader(string(data)))
@@ -116,6 +122,30 @@ func updatePullRequest(prNumber, token, repo, title, body string) error {
 		return fmt.Errorf("failed to update PR: %v", err)
 	}
 
-	fmt.Printf("Updated PR #%s with new title and description.\n", prNumber)
+	fmt.Printf("Updated PR #%s with new title.\n", prNumber)
 	return nil
+}
+
+func getPullRequestTitle(prNumber, token, repo string) (string, error) {
+	url := fmt.Sprintf("https://api.github.com/repos/%s/pulls/%s", repo, prNumber)
+
+	req, _ := http.NewRequest("GET", url, nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Accept", "application/vnd.github+json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil || resp.StatusCode != 200 {
+		return "", fmt.Errorf("failed to fetch PR title: %v", err)
+	}
+	defer resp.Body.Close()
+
+	var result struct {
+		Title string `json:"title"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return "", fmt.Errorf("decode error: %v", err)
+	}
+
+	return result.Title, nil
 }

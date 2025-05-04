@@ -12,7 +12,7 @@ import (
 func init() {
 	registerCommand(
 		"bump-git-tag",
-		"Bumps the Git tag based on commit messages",
+		"Bumps the Git tag based on commit messages (including fix:, feat:, breaking:).",
 		executeBumpGitTag,
 	)
 }
