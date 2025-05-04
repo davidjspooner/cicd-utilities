@@ -36,6 +36,7 @@ jobs:
       - name: Upload tarball
         uses: actions/upload-artifact@v4.6.2
         with:
+          name: cicd-utilities-${{ matrix.arch }}
           path: dist/cicd-utilities-${{ matrix.arch }}.tar.gz
           retention-days: 1
   release:
@@ -49,7 +50,6 @@ jobs:
         with:
           path: dist/
       - name: Create release
-        id: create_release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: cicd-utilities-${{ github.run_number }}
