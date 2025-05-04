@@ -14,7 +14,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: "stable"
 
@@ -24,7 +24,7 @@ jobs:
           pwd
           ls -la
           rm -rf dist
-          mkdir -p dist/{{ matrix.arch }}
+          mkdir -p dist/cicd-utilities-${{ matrix.arch }}
           GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 go build -ldflags="-s -w" -o ./dist/cicd-utilities-${{ matrix.arch }}/cicd-utilities ./cmd/cicd-utilitiies
 
       - name: Upload artifacts
@@ -50,7 +50,6 @@ jobs:
         uses: actions/download-artifact@v4.3.0
         with:
           path: dist/
-          merge-multiple: true
 
       - name: List structure
         run: |
