@@ -22,7 +22,6 @@ func executeBumpGitTag(args []string) error {
 	prefix := bumpCommand.String("prefix", "", "Prefix for the new tag")
 	suffix := bumpCommand.String("suffix", "", "Suffix for the new tag")
 	dryRun := bumpCommand.Bool("dry-run", false, "Perform a dry run without updating the tag")
-	verbose := bumpCommand.Bool("verbose", false, "Enable verbose output")
 	remote := bumpCommand.String("remote", "origin", "Remote to push the tag to")
 	bumpCommand.Parse(args)
 
@@ -33,7 +32,7 @@ func executeBumpGitTag(args []string) error {
 	}
 
 	// Get the latest tag
-	latestTag, err := getLatestTag(currentBranch, *verbose)
+	latestTag, err := getLatestTag(currentBranch)
 	if err != nil {
 		return fmt.Errorf("failed to get the latest tag: %v", err)
 	}
@@ -43,7 +42,7 @@ func executeBumpGitTag(args []string) error {
 		return fmt.Errorf("failed to extract version from tag: %v", err)
 	}
 
-	if *verbose {
+	if verbose {
 		fmt.Printf("Latest tag: %s\n", latestTag)
 	}
 	fmt.Printf("Current version: %s\n", currentVersion.String())
@@ -102,7 +101,7 @@ func executeBumpGitTag(args []string) error {
 	return nil
 }
 
-func getLatestTag(branch string, verbose bool) (string, error) {
+func getLatestTag(branch string) (string, error) {
 
 	commits, err := git.Run("rev-list", "--tags", "--no-walk", "--abbrev=0", "--date-order", branch)
 	if err != nil {

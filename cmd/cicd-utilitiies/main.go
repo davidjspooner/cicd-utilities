@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 )
@@ -15,27 +16,6 @@ type Command struct {
 
 var Commands = make(map[string]Command)
 
-func help(args []string) error {
-	fmt.Println("Available commands:")
-	longestName := 0
-	for name := range Commands {
-		longestName = max(longestName, len(name))
-	}
-	longestName += 2 // for padding
-	for name, cmd := range Commands {
-		fmt.Printf("  %s%*s : %s\n", name, (longestName - len(name)), " ", cmd.Description)
-	}
-	return nil
-}
-
-func init() {
-	registerCommand(
-		"help",
-		"Display help information",
-		help,
-	)
-}
-
 func registerCommand(name string, description string, execute func(args []string) error) Command {
 	command := Command{
 		Name:        name,
@@ -49,21 +29,38 @@ func registerCommand(name string, description string, execute func(args []string
 	return command
 }
 
+var verbose bool
+
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Println("Usage: cicd-utility <command> --options")
 		os.Exit(1)
 	}
 
+	mainCommand := flag.NewFlagSet("main", flag.ExitOnError)
+	verbosePtr := mainCommand.Bool("verbose", false, "Enable verbose output")
+	help := mainCommand.Bool("help", false, "Display help information")
+	mainCommand.Parse(os.Args[1:])
+	verbose = *verbosePtr
+	if *help {
+		helpCommand(os.Args[1:])
+		os.Exit(0)
+	}
+
+	if len(mainCommand.Args()) < 1 {
+		fmt.Println("Usage: cicd-utility --verbose <command> <args_and_options>")
+		helpCommand(os.Args[:])
+		os.Exit(1)
+	}
 	command := os.Args[1]
 	if cmd, exists := Commands[command]; exists {
-		if err := cmd.Execute(os.Args[2:]); err != nil {
+		if err := cmd.Execute(mainCommand.Args()[1:]); err != nil {
 			fmt.Printf("Error executing command %s: %v\n", command, err)
 			os.Exit(1)
 		}
 	} else {
 		fmt.Printf("Unknown command: %s\n", command)
-		help(os.Args[1:])
+		helpCommand(os.Args[:])
 		os.Exit(1)
 	}
 }
