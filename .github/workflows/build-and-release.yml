@@ -27,18 +27,19 @@ jobs:
           mkdir -p dist/{{ matrix.arch }}
           GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 go build -ldflags="-s -w" -o ./dist/${{ matrix.arch }}/cicd-utilities ./cmd/cicd-utilitiies
 
-      - name: Create tarball
-        run: |
-          echo "Creating tarball for ${{ matrix.arch }}"
-          tar -czf dist/cicd-utilities-${{ matrix.arch }}.tar.gz -C ./dist/${{ matrix.arch }} cicd-utilities
-          ls -la dist/
-
-      - name: Upload tarball
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4.6.2
         with:
           name: cicd-utilities-${{ matrix.arch }}
-          path: dist/cicd-utilities-${{ matrix.arch }}.tar.gz
+          path: dist/cicd-utilities-${{ matrix.arch }}/
           retention-days: 1
+          
+      - name: List structure
+        run: |
+          echo "Listing structure"
+          pwd
+          ls -laR dist
+  
   release:
     runs-on: ubuntu-latest
     needs: build
@@ -49,12 +50,11 @@ jobs:
         uses: actions/download-artifact@v4.3.0
         with:
           path: dist/
-      - name: Create release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: cicd-utilities-${{ github.run_number }}
-          files: |
-            dist/cicd-utilities-amd64.tar.gz
-            dist/cicd-utilities-arm64.tar.gz
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          merge-multiple: true
+
+      - name: List structure
+        run: |
+          echo "Listing structure"
+          pwd
+          ls -laR dist
+
