@@ -25,8 +25,15 @@ jobs:
           ls -la
           rm -rf dist
           mkdir -p dist/{{ matrix.arch }}
-          GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 go build -ldflags="-s -w" -o dist/${{ matrix.arch }}/cicd-utilities cmd/cicd-utilitiies
+          GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 go build -ldflags="-s -w" -o ./dist/${{ matrix.arch }}/cicd-utilities ./cmd/cicd-utilitiies
 
-      - name: Tar binary
+      - name: Create tarball
         run: |
-          tar -czf dist/cicd-utilities-${{ matrix.arch }}.tar.gz -C dist/${{ matrix.arch }} *
+          echo "Creating tarball for ${{ matrix.arch }}"
+          tar -czf cicd-utilities-${{ matrix.arch }}.tar.gz -C ./dist/${{ matrix.arch }} cicd-utilities
+          ls -la dist/${{ matrix.arch }}
+
+      - name: Upload tarball
+        uses: actions/upload-artifact@v3
+        with:
+          name: cicd-utilities-${{ matrix.arch }}.tar.gz
