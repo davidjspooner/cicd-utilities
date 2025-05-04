@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-and-release:
+  build:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -30,10 +30,31 @@ jobs:
       - name: Create tarball
         run: |
           echo "Creating tarball for ${{ matrix.arch }}"
-          tar -czf cicd-utilities-${{ matrix.arch }}.tar.gz -C ./dist/${{ matrix.arch }} cicd-utilities
-          ls -la dist/${{ matrix.arch }}
+          tar -czf dist/cicd-utilities-${{ matrix.arch }}.tar.gz -C ./dist/${{ matrix.arch }} cicd-utilities
+          ls -la dist/
 
       - name: Upload tarball
         uses: actions/upload-artifact@v3
         with:
-          name: cicd-utilities-${{ matrix.arch }}.tar.gz
+          path: dist/cicd-utilities-${{ matrix.arch }}.tar.gz
+          retention-days: 1
+  release:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Make dist directory
+        run: mkdir -p dist
+      - name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          path: dist/
+      - name: Create release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: cicd-utilities-${{ github.run_number }}
+          files: |
+            dist/cicd-utilities-amd64.tar.gz
+            dist/cicd-utilities-arm64.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
