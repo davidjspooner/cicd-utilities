@@ -23,8 +23,8 @@ jobs:
           echo "Building for ${{ matrix.arch }}"
           rm -rf dist
           mkdir -p dist/{{ matrix.arch }}
-          GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 go build -ldflags="-s -w" -o dist/{{ matrix.arch }}/cicd-utilities cmd/cicd
+          GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 go build -ldflags="-s -w" -o dist/${{ matrix.arch }}/cicd-utilities cmd/cicd
 
       - name: Tar binary
         run: |
-          tar -czf dist/cicd-utilities-{{ matrix.arch }}.tar.gz -C dist/{{ matrix.arch }} *
+          tar -czf dist/cicd-utilities-${{ matrix.arch }}.tar.gz -C dist/${{ matrix.arch }} *
