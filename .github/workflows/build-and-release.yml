@@ -20,6 +20,7 @@ jobs:
 
       - name: Build binary
         run: |
+          echo "Building for ${{ matrix.arch }}"
           rm -rf dist
           mkdir -p dist/{{ matrix.arch }}
           GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 go build -ldflags="-s -w" -o dist/{{ matrix.arch }}/cicd-utilities cmd/cicd

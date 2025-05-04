@@ -9,7 +9,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/davidjspooner/go-cicd/pkg/semantic"
+	"github.com/davidjspooner/cicd-utilities/pkg/semantic"
 )
 
 func init() {

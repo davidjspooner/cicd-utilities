@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/davidjspooner/go-cicd/pkg/git"
+	"github.com/davidjspooner/cicd-utilities/pkg/git"
 )
 
 func init() {
