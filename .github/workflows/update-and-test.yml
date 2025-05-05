@@ -55,4 +55,4 @@ jobs:
       - name: Increment tag if needed (main branch only)
         run: |
           echo "Incrementing tag if needed"
-          go run ./cmd/cicd-utilities "git-update-tag --tag-prefix "v" 
+          go run ./cmd/cicd-utilities git-update-tag --tag-prefix=v
