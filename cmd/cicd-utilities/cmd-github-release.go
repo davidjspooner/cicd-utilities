@@ -13,7 +13,7 @@ import (
 
 type GithubReleaseOptions struct {
 	TagName    string `arg:"--tag,Tag name for the release"`
-	Title      string `arg:"--title,Title of the release"`
+	Name       string `arg:"--name,Name/Title of the release"`
 	Body       string `arg:"--body,Description of the release"`
 	Draft      bool   `arg:"--draft,Create the release as a draft"`
 	Prerelease bool   `arg:"--prerelease,Mark the release as a prerelease"`
@@ -50,21 +50,17 @@ func executeGithubRelease(ctx context.Context, cmd command.Object, option *Githu
 		return fmt.Errorf("GITHUB_TOKEN and GITHUB_REPOSITORY environment variables are required")
 	}
 
-	if option.TagName == "" {
-		return fmt.Errorf("tag name is required")
-	}
-
 	url := fmt.Sprintf("https://api.github.com/repos/%s/releases", repo)
 
 	release := struct {
-		TagName    string `json:"tag_name"`
+		TagName    string `json:"tag_name,omitempty"`
 		Name       string `json:"name"`
 		Body       string `json:"body"`
 		Draft      bool   `json:"draft"`
 		Prerelease bool   `json:"prerelease"`
 	}{
 		TagName:    option.TagName,
-		Name:       option.Title,
+		Name:       option.Name,
 		Body:       option.Body,
 		Draft:      true,
 		Prerelease: option.Prerelease,
