@@ -72,13 +72,11 @@ func getDefinedOptions[T any](defaults *T) ([]Option, error) {
 					break
 				}
 			}
-			if dashCount > 2 {
-				return nil, fmt.Errorf("too many dashes in name %s for field %s", arg.Names[i], arg.field.Name)
-			}
-			if dashCount == 0 {
+			if dashCount == 0 && !strings.HasPrefix(arg.Names[i], "$") {
 				return nil, fmt.Errorf("no dashes in name %s for field %s", arg.Names[i], arg.field.Name)
-			}
-			if dashCount == 1 && len(arg.Names[i]) > 2 {
+			} else if dashCount > 2 {
+				return nil, fmt.Errorf("too many dashes in name %s for field %s", arg.Names[i], arg.field.Name)
+			} else if dashCount == 1 && len(arg.Names[i]) > 2 {
 				return nil, fmt.Errorf("short name %s for field %s should be a single character", arg.Names[i], arg.field.Name)
 			}
 		}

@@ -87,7 +87,7 @@ func executeBumpGitTag(ctx context.Context, cmd command.Object, option *BumpGitT
 	// Construct the new tag
 	newTag := fmt.Sprintf("%s%s%s", option.Prefix, newVersion.String(), option.Suffix)
 
-	fmt.Printf("Increment reason: %s\n", increment)
+	fmt.Printf("Increment: %s\n", increment)
 
 	if option.DryRun {
 		fmt.Println("Dry run enabled.")

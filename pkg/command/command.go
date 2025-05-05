@@ -6,6 +6,7 @@ import (
 	"os"
 	"reflect"
 	"strconv"
+	"strings"
 )
 
 type Object interface {
@@ -76,54 +77,42 @@ func (c *command[T]) Execute(ctx context.Context, args []string) error {
 
 	for _, arg := range definedArgs {
 		for _, name := range arg.Names {
+			if strings.HasPrefix(name, "$") {
+				// Check if the environment variable is set
+				envVar := strings.TrimPrefix(name, "$")
+				if value, ok := os.LookupEnv(envVar); ok {
+					f := rOptions.FieldByName(arg.field.Name)
+					if f.Kind() == reflect.Bool {
+						err := c.setField(f, "true")
+						if err != nil {
+							return fmt.Errorf("failed to set value for field %s: %v", arg.field.Name, err)
+						}
+					} else {
+						err := c.setField(f, value)
+						if err != nil {
+							return fmt.Errorf("failed to set value for field %s: %v", arg.field.Name, err)
+						}
+					}
+				}
+				continue
+			}
 			for i := 0; i < len(expandedArgs); i++ {
 				if expandedArgs[i] == name {
-					switch arg.field.Type.Kind() {
-					case reflect.Bool:
-						// Set the boolean field to true
-						f := rOptions.FieldByName(arg.field.Name)
-						f.SetBool(true)
-						expandedArgs = append(expandedArgs[:i], expandedArgs[i+1:]...)
-					case reflect.String:
-						// Set the string field to the next argument
-						if i+1 < len(expandedArgs) {
-							f := rOptions.FieldByName(arg.field.Name)
-							f.SetString(expandedArgs[i+1])
-							// Remove the next argument from the list
-							expandedArgs = append(expandedArgs[:i], expandedArgs[i+2:]...)
-						} else {
-							return fmt.Errorf("missing value for argument %s", name)
+					f := rOptions.FieldByName(arg.field.Name)
+					if f.Kind() == reflect.Bool {
+						err := c.setField(f, "true")
+						if err != nil {
+							return fmt.Errorf("failed to set value for field %s: %v", arg.field.Name, err)
 						}
-					case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-						// Set the int field to the next argument
-						if i+1 < len(expandedArgs) {
-							value, err := strconv.Atoi(expandedArgs[i+1])
-							if err != nil {
-								return fmt.Errorf("invalid value for argument %s: %v", name, err)
-							}
-							f := rOptions.FieldByName(arg.field.Name)
-							f.SetInt(int64(value))
-							// Remove the next argument from the list
-							expandedArgs = append(expandedArgs[:i], expandedArgs[i+2:]...)
-						} else {
-							return fmt.Errorf("missing value for argument %s", name)
+					} else if i+1 < len(expandedArgs) {
+						err := c.setField(f, expandedArgs[i+1])
+						if err != nil {
+							return fmt.Errorf("failed to set value for field %s: %v", arg.field.Name, err)
 						}
-					case reflect.Float32, reflect.Float64:
-						// Set the float field to the next argument
-						if i+1 < len(expandedArgs) {
-							value, err := strconv.ParseFloat(expandedArgs[i+1], 64)
-							if err != nil {
-								return fmt.Errorf("invalid value for argument %s: %v", name, err)
-							}
-							f := rOptions.FieldByName(arg.field.Name)
-							f.SetFloat(value)
-							// Remove the next argument from the list
-							expandedArgs = append(expandedArgs[:i], expandedArgs[i+2:]...)
-						} else {
-							return fmt.Errorf("missing value for argument %s", name)
-						}
-					default:
-						return fmt.Errorf("unsupported type for argument %s: %s", name, arg.field.Type.Kind())
+						// Remove the next argument as it has been consumed
+						expandedArgs = append(expandedArgs[:i+1], expandedArgs[i+2:]...)
+					} else {
+						return fmt.Errorf("missing value for argument %s", name)
 					}
 				}
 			}
@@ -134,6 +123,37 @@ func (c *command[T]) Execute(ctx context.Context, args []string) error {
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+func (c *command[T]) setField(rField reflect.Value, value string) error {
+	switch rField.Kind() {
+	case reflect.Bool:
+		if value == "true" {
+			rField.SetBool(true)
+		} else if value == "false" {
+			rField.SetBool(false)
+		} else {
+			return fmt.Errorf("invalid value for boolean field %s: %s", rField.Type().Name(), value)
+		}
+	case reflect.String:
+		rField.SetString(value)
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		intValue, err := strconv.ParseInt(value, 10, 64)
+		if err != nil {
+			return fmt.Errorf("invalid value for integer field %s: %s", rField.Type().Name(), value)
+		}
+		rField.SetInt(intValue)
+	case reflect.Float32, reflect.Float64:
+		floatValue, err := strconv.ParseFloat(value, 64)
+		if err != nil {
+			return fmt.Errorf("invalid value for float field %s: %s", rField.Type().Name(), value)
+		}
+		rField.SetFloat(floatValue)
+	default:
+		return fmt.Errorf("unsupported type for field %s: %s", rField.Type().Name(), rField.Kind())
+	}
+
 	return nil
 }
 
