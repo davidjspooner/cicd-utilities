@@ -34,11 +34,11 @@ func executeGetGitEnv(ctx context.Context, cmd command.Object, option *GetGitEnv
 	if err != nil {
 		return fmt.Errorf("failed to get current branch: %v", err)
 	}
-	fmt.Printf("export BUILD_BRANCH=%s\n", currentBranch)
-	fmt.Printf("export BUILD_NAME=%s\n", suggestBuildName())
-	fmt.Printf("export BUILD_CONTEXT=%s\n", getBuildContext())
+	fmt.Printf("BUILD_BRANCH=%s\n", currentBranch)
+	fmt.Printf("BUILD_NAME=%s\n", suggestBuildName())
+	fmt.Printf("BUILD_CONTEXT=%s\n", getBuildContext())
 	now := time.Now().UTC()
-	fmt.Printf("export BUILD_TIME=%s\n", now.Format(time.RFC1123))
+	fmt.Printf("BUILD_TIME=%s\n", now.Format(time.RFC1123))
 	return nil
 }
 
