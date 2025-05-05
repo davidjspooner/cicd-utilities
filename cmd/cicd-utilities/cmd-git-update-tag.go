@@ -19,7 +19,7 @@ type BumpGitTagOptions struct {
 
 func init() {
 	cmd := command.New(
-		"update-git-tag",
+		"git-update-tag",
 		"Automatically increment Git tags based on commit messages (e.g., fix:, feat:, breaking:)",
 		executeBumpGitTag,
 		&BumpGitTagOptions{
