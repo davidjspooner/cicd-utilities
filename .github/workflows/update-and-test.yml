@@ -10,10 +10,6 @@ jobs:
   update-versions-and-test:
     runs-on: ubuntu-latest
     if: github.actor != 'github-actions[bot]'
-    strategy:
-      matrix:
-        arch: [amd64, arm64]
-        os: [linux, darwin]
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -59,5 +55,4 @@ jobs:
       - name: Increment tag if needed (main branch only)
         run: |
           echo "Incrementing tag if needed"
-          go get ./...
-          go run .cmd/acicd-utilities git-increment-tag --tag-prefix "v" 
+          go run ./cmd/cicd-utilities git-increment-tag --tag-prefix "v" 
