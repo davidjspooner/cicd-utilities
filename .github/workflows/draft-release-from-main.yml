@@ -4,48 +4,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  update-and-test:
+  build-and-release:
     runs-on: ubuntu-latest
-    steps:
-      - name: CheckBranch
-        run: |
-          echo "Checking branch"
-          if [[ "${{ github.ref }}" != "refs/heads/main" ]]; then
-            echo "This workflow can only run on the main branch."
-            exit 1
-          fi
-
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: "stable"
-
-      - name: Update Go modules
-        run: |
-          echo "Updating Go modules"
-          go get -u ./...
-          go mod tidy
-
-      - name: Run Go tests
-        run: |
-          echo "Running Go tests"
-          go test ./... -v
-
-      - name: Run Go vet
-        run: |
-          echo "Running Go vet"
-          go vet ./...
-    
-      - name: Increment tag if needed (main branch only)
-        run: |
-          go run .cmd/cicd-utilities git-increment-tag --tag-prefix "v" --tag-branch "main" --tag-commit "HEAD" --tag-version-file ".github/tag-version.txt"
-  
-  build:
-    runs-on: ubuntu-latest
-    needs: update-and-test
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -58,7 +18,7 @@ jobs:
         id: build-env
         run: |
           echo "Parsing build environment"
-          BUILD_ENV=$(go run .cmd/cicd-utilities get-build-env)
+          BUILD_ENV=$(go run ./cmd/cicd-utilities get-build-env)
           eval $BUILD_ENV
           set | grep BUILD
 
@@ -75,7 +35,7 @@ jobs:
         run: |
           echo "Compressing binaries"
           set | grep BUILD
-          go run .cmd/cicd-utilities compress-binaries \
+          go run ./cmd/cicd-utilities compress-binaries \
             --replace \
             --format zip
             dist/cicd-utilities-amd64 \
@@ -84,7 +44,7 @@ jobs:
       - name: Checksum
         run: |
           echo "Calculating checksum"
-          go run .cmd/cicd-utilities checksum \
+          go run ./cmd/cicd-utilities checksum \
             --combined-file dist/checksums.txt \
             --algorithm sha256 \
             dist/cicd-utilities-*.zip 

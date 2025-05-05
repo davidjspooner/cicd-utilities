@@ -1,4 +1,4 @@
-name: Build, Test, and Release
+name: Update and Test
 
 on:
   workflow_dispatch:
