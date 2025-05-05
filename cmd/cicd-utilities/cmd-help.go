@@ -1,24 +1,25 @@
 package main
 
-import "fmt"
+import (
+	"context"
+	"fmt"
 
-func helpCommand(args []string) error {
-	fmt.Println("Available commands:")
-	longestName := 0
-	for name := range Commands {
-		longestName = max(longestName, len(name))
-	}
-	longestName += 2 // for padding
-	for name, cmd := range Commands {
-		fmt.Printf("  %s%*s : %s\n", name, (longestName - len(name)), " ", cmd.Description)
-	}
-	return nil
+	"github.com/davidjspooner/cicd-utilities/pkg/command"
+)
+
+func helpCommand(ctx context.Context, cmd command.Object, option *HelpOptions, args []string) error {
+	return fmt.Errorf("help command not implemented")
+}
+
+type HelpOptions struct {
 }
 
 func init() {
-	registerCommand(
+	cmd := command.New(
 		"help",
 		"Display help information",
 		helpCommand,
+		&HelpOptions{},
 	)
+	commands = append(commands, cmd)
 }

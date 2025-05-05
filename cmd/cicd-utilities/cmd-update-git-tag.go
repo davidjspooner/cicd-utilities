@@ -1,30 +1,36 @@
 package main
 
 import (
-	"flag"
+	"context"
 	"fmt"
 	"strings"
 
+	"github.com/davidjspooner/cicd-utilities/pkg/command"
 	"github.com/davidjspooner/cicd-utilities/pkg/git"
 	"github.com/davidjspooner/cicd-utilities/pkg/semantic"
 )
 
-func init() {
-	registerCommand(
-		"bump-git-tag",
-		"Bumps the Git tag based on commit messages (including fix:, feat:, breaking:).",
-		executeBumpGitTag,
-	)
+type BumpGitTagOptions struct {
+	Prefix string `arg:"--prefix,Prefix string"`
+	Suffix string `arg:"--suffix,Suffix string"`
+	DryRun bool   `arg:"--dry-run,Do not push the tag"`
+	Remote string `arg:"--remote,Remote to push the tag to"`
 }
 
-func executeBumpGitTag(args []string) error {
-	bumpCommand := flag.NewFlagSet("bump-git-tag", flag.ExitOnError)
-	prefix := bumpCommand.String("prefix", "", "Prefix for the new tag")
-	suffix := bumpCommand.String("suffix", "", "Suffix for the new tag")
-	dryRun := bumpCommand.Bool("dry-run", false, "Perform a dry run without updating the tag")
-	remote := bumpCommand.String("remote", "origin", "Remote to push the tag to")
-	bumpCommand.Parse(args)
+func init() {
+	cmd := command.New(
+		"update-git-tag",
+		"Automatically increment Git tags based on commit messages (e.g., fix:, feat:, breaking:)",
+		executeBumpGitTag,
+		&BumpGitTagOptions{
+			Remote: "origin",
+			Prefix: "v",
+		},
+	)
+	commands = append(commands, cmd)
+}
 
+func executeBumpGitTag(ctx context.Context, cmd command.Object, option *BumpGitTagOptions, args []string) error {
 	// Get the current branch
 	currentBranch, err := git.GetCurrentBranch()
 	if err != nil {
@@ -42,7 +48,7 @@ func executeBumpGitTag(args []string) error {
 		return fmt.Errorf("failed to extract version from tag: %v", err)
 	}
 
-	if verbose {
+	if global.Verbose {
 		fmt.Printf("Latest tag: %s\n", latestTag)
 	}
 	fmt.Printf("Current version: %s\n", currentVersion.String())
@@ -62,28 +68,28 @@ func executeBumpGitTag(args []string) error {
 		nCommits++
 	}
 	if nCommits == 0 {
-		fmt.Println("No changes deteced, no version bump needed.")
+		fmt.Println("No changes deteced, no version increment needed.")
 		return nil
 	}
 
-	// Determine the version bump
-	bump, err := semantic.Bumps.GetVersionBump(commits)
+	// Determine the version increment
+	increment, err := semantic.Bumps.GetVersionBump(commits)
 	if err != nil {
-		return fmt.Errorf("failed to determine version bump: %v", err)
+		return fmt.Errorf("failed to determine version increment: %v", err)
 	}
 
 	// Increment the version
-	newVersion, err := currentVersion.Increment(bump)
+	newVersion, err := currentVersion.Increment(increment)
 	if err != nil {
 		return fmt.Errorf("failed to increment version: %v", err)
 	}
 
 	// Construct the new tag
-	newTag := fmt.Sprintf("%s%s%s", *prefix, newVersion.String(), *suffix)
+	newTag := fmt.Sprintf("%s%s%s", option.Prefix, newVersion.String(), option.Suffix)
 
-	fmt.Printf("Bumping reason: %s\n", bump)
+	fmt.Printf("Increment reason: %s\n", increment)
 
-	if *dryRun {
+	if option.DryRun {
 		fmt.Println("Dry run enabled.")
 		fmt.Printf("Would create new tag: %s\n", newTag)
 		return nil
@@ -93,7 +99,7 @@ func executeBumpGitTag(args []string) error {
 	if _, err := git.Run("tag", newTag); err != nil {
 		return fmt.Errorf("failed to create tag: %v", err)
 	}
-	if _, err := git.Run("push", *remote, newTag); err != nil {
+	if _, err := git.Run("push", option.Remote, newTag); err != nil {
 		return fmt.Errorf("failed to push tag: %v", err)
 	}
 
@@ -118,7 +124,7 @@ func getLatestTag(branch string) (string, error) {
 		if err != nil {
 			continue
 		}
-		if verbose {
+		if global.Verbose {
 			fmt.Printf("Commit %s is ancestor of %s: %s\n", commit, branch, checkCmd)
 		}
 		tagsForCommit, err := git.Run("tag", "--contains", commit)

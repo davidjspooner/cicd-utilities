@@ -4,58 +4,63 @@ import (
 	"archive/tar"
 	"archive/zip"
 	"compress/gzip"
-	"flag"
+	"context"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+
+	"github.com/davidjspooner/cicd-utilities/pkg/command"
 )
 
 func init() {
 	// Register the compress command
-	registerCommand("compress", "Compress files and directories", compressCommand)
+	cmd := command.New(
+		"compress",
+		"Compress files or directories into zip or tar.gz formats",
+		compressCommand,
+		&CompressOptions{
+			Format: "tar.gz",
+		},
+	)
+	commands = append(commands, cmd)
 }
 
-func compressCommand(args []string) error {
+type CompressOptions struct {
+	Format  string `arg:"--format,Format to compress the files (zip, tar.gz)"`
+	Replace bool   `arg:"--replace,Remove original files after compression"`
+}
+
+func compressCommand(ctx context.Context, cmd command.Object, option *CompressOptions, args []string) error {
 	// Check if the correct number of arguments is provided
 
-	compressCommand := flag.NewFlagSet("compress", flag.ExitOnError)
-	format := compressCommand.String("format", "", "Format to compress the files (zip, tar.gz)")
-	replace := compressCommand.Bool("replace", false, "Remove original files after compression")
-
-	compressCommand.Parse(args)
-
-	if len(args) < 2 {
-		return fmt.Errorf("usage: cicd-utilities compress --format <zip|tar.gz> [--verbose] [--replace] <file_or_directory>")
-	}
-
 	var err error
-	for _, path := range compressCommand.Args() {
-		switch *format {
+	for _, path := range args {
+		switch option.Format {
 		case "zip":
 			err = compressToZip(path)
 		case "tar.gz":
 			err = compressToTarGz(path)
 		default:
 			// Print an error message if the format is not recognized
-			return fmt.Errorf("unsupported --format: %q . Please use 'zip' or 'tar.gz'", *format)
+			return fmt.Errorf("unsupported --format: %q . Please use 'zip' or 'tar.gz'", option.Format)
 		}
 		if err != nil {
 			return fmt.Errorf("error compressing file %s: %v", path, err)
 		}
 	}
-	if verbose {
+	if global.Verbose {
 		println("Compression completed successfully.")
 	}
-	if *replace {
+	if option.Replace {
 		// Call the function to remove original files
-		for _, path := range compressCommand.Args() {
+		for _, path := range args {
 			err = removeOriginal(path)
 			if err != nil {
 				return fmt.Errorf("error removing original files: %s", err)
 			}
 		}
-		if verbose {
+		if global.Verbose {
 			println("Original files removed successfully.")
 		}
 	}

@@ -1,38 +1,39 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"strings"
 
+	"github.com/davidjspooner/cicd-utilities/pkg/command"
 	"github.com/davidjspooner/cicd-utilities/pkg/semantic"
 )
 
-func init() {
-	registerCommand(
-		"update-github-pr-meta",
-		"Updates GitHub PR title based on commit messages (including fix:, feat:, breaking:)",
-		executeUpdateGithubPRMeta,
-	)
+type GithubPRUpdateOptions struct {
+	PRNumber string `arg:"<pr-number>,Pull request number"`
+	DryRun   bool   `arg:"--dry-run,Do not update the PR title"`
 }
 
-func executeUpdateGithubPRMeta(args []string) error {
+func init() {
+	cmd := command.New(
+		"github-pr-update",
+		"Update GitHub PR metadata (title) based on commit messages (e.g., fix:, feat:, breaking:)",
+		executeUpdateGithubPRMeta,
+		&GithubPRUpdateOptions{},
+	)
+	commands = append(commands, cmd)
+}
+
+func executeUpdateGithubPRMeta(ctx context.Context, cmd command.Object, option *GithubPRUpdateOptions, args []string) error {
 	if len(args) < 1 {
 		return fmt.Errorf("usage: update-github-pr-meta <pr-number> [--dry-run]")
 	}
 
-	subCommand := flag.NewFlagSet("update-github-pr-meta", flag.ExitOnError)
-	prNumber := subCommand.String("pr", "", "Pull request number")
-	dryRun := subCommand.Bool("dry-run", false, "Perform a dry run without updating the PR")
-	err := subCommand.Parse(args)
-	if err != nil {
-		return fmt.Errorf("error parsing arguments: %v", err)
-	}
-	if *prNumber == "" {
+	if option.PRNumber == "" {
 		return fmt.Errorf("pull request number is required")
 	}
 
@@ -44,7 +45,7 @@ func executeUpdateGithubPRMeta(args []string) error {
 	}
 
 	// Fetch commit messages
-	commitMessages := getCommitMessages(*prNumber, token, repo)
+	commitMessages := getCommitMessages(option.PRNumber, token, repo)
 
 	// Determine version bump
 	bump, err := semantic.Bumps.GetVersionBump(commitMessages)
@@ -53,26 +54,26 @@ func executeUpdateGithubPRMeta(args []string) error {
 	}
 
 	//get the current PR title
-	prTitle, err := getPullRequestTitle(*prNumber, token, repo)
+	prTitle, err := getPullRequestTitle(option.PRNumber, token, repo)
 	if err != nil {
 		return fmt.Errorf("error fetching PR title: %v", err)
 	}
 	if strings.Contains(prTitle, bump) {
-		fmt.Printf("PR #%s already has the bump %s in the title.\n", *prNumber, bump)
+		fmt.Printf("PR #%s already has the bump %s in the title.\n", option.PRNumber, bump)
 		return nil
 	}
 
 	// Compose new title
 	newTitle := fmt.Sprintf("%s: update based on commits", bump)
 
-	if *dryRun {
+	if option.DryRun {
 		fmt.Println("Dry run enabled.")
-		fmt.Printf("Would update PR #%s with title: %s\n", *prNumber, newTitle)
+		fmt.Printf("Would update PR #%s with title: %s\n", option.PRNumber, newTitle)
 		return nil
 	}
 
 	// Update PR via GitHub API
-	return updatePullRequest(*prNumber, token, repo, newTitle)
+	return updatePullRequest(option.PRNumber, token, repo, newTitle)
 }
 
 func getCommitMessages(prNumber, token, repo string) []string {

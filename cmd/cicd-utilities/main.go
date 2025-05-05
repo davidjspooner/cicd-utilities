@@ -1,73 +1,40 @@
 package main
 
 import (
-	"flag"
+	"context"
 	"fmt"
 	"os"
+
+	"github.com/davidjspooner/cicd-utilities/pkg/command"
 )
 
-type Command struct {
-	Name        string
-	Description string
-	// Function to execute the command
-	Execute func(args []string) error
-	// Function to validate the command arguments
+type GlobalOptions struct {
+	Verbose bool `arg:"--verbose,Enable verbose output"`
 }
 
-var Commands = make(map[string]Command)
+var global GlobalOptions
 
-func registerCommand(name string, description string, execute func(args []string) error) Command {
-	command := Command{
-		Name:        name,
-		Description: description,
-		Execute:     execute,
-	}
-	if _, exists := Commands[name]; exists {
-		panic(fmt.Sprintf("Command %s is already registered", name))
-	}
-	Commands[name] = command
-	return command
-}
-
-var verbose bool
+var commands = command.Group{}
 
 func main() {
-	if len(os.Args) < 2 {
-		fmt.Println("Usage: cicd-utility <command> --options")
-		os.Exit(1)
-	}
 
-	mainCommand := flag.NewFlagSet("main", flag.ExitOnError)
-	verbosePtr := mainCommand.Bool("verbose", false, "Enable verbose output")
-	help := mainCommand.Bool("help", false, "Display help information")
+	mainCommand := command.New("", "A utility for CI/CD operations",
+		func(ctx context.Context, cmd command.Object, options *GlobalOptions, args []string) error {
 
-	err := mainCommand.Parse(os.Args[1:])
+			global = *options
+			// Parse the command line arguments
+			if len(args) < 1 {
+				fmt.Println("Usage: cicd-utility <command> --options")
+				return nil
+			}
+			err := commands.Execute(context.Background(), args[0], args[1:])
+			return err
+
+		}, &global)
+
+	err := mainCommand.Execute(context.Background(), os.Args[1:])
 	if err != nil {
-		fmt.Printf("Error parsing arguments: %v\n", err)
-		os.Exit(1)
-	}
-
-	verbose = *verbosePtr
-	if *help {
-		helpCommand(os.Args)
-		os.Exit(0)
-	}
-
-	remainingArgs := mainCommand.Args()
-	if len(remainingArgs) < 1 {
-		fmt.Println("Usage: cicd-utility --verbose <command> <args_and_options>")
-		helpCommand(remainingArgs)
-		os.Exit(1)
-	}
-	command := remainingArgs[0]
-	if cmd, exists := Commands[command]; exists {
-		if err := cmd.Execute(remainingArgs[1:]); err != nil {
-			fmt.Printf("Error executing command %s: %v\n", command, err)
-			os.Exit(1)
-		}
-	} else {
-		fmt.Printf("Unknown command: %s\n", command)
-		helpCommand(os.Args)
+		fmt.Printf("Error executing command: %v\n", err)
 		os.Exit(1)
 	}
 }

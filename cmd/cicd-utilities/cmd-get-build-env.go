@@ -1,25 +1,38 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
 	"strings"
 	"time"
 
+	"github.com/davidjspooner/cicd-utilities/pkg/command"
 	"github.com/davidjspooner/cicd-utilities/pkg/git"
 )
 
+type GetGitEnvOptions struct {
+}
+
 func init() {
-	registerCommand(
+	cmd := command.New(
 		"get-build-env",
 		"Get the environment variables for the current build",
 		executeGetGitEnv,
+		&GetGitEnvOptions{},
 	)
+	commands = append(commands, cmd)
 }
 
-func executeGetGitEnv(args []string) error {
+func executeGetGitEnv(ctx context.Context, cmd command.Object, option *GetGitEnvOptions, args []string) error {
 	gitEnvCommand := flag.NewFlagSet("get-git-env", flag.ExitOnError)
+	gitEnvCommand.Usage = func() {
+		fmt.Println("Usage: cicd-utilities get-git-env [options]")
+		fmt.Println("Options:")
+		gitEnvCommand.PrintDefaults()
+	}
+
 	gitEnvCommand.Parse(args)
 
 	// Get the current branch
