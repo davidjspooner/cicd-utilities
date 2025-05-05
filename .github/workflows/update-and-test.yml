@@ -7,8 +7,9 @@ on:
       - "*"
 
 jobs:
-  build-and-test:
+  update-versions-and-test:
     runs-on: ubuntu-latest
+    if: github.actor != 'github-actions[bot]'
     strategy:
       matrix:
         arch: [amd64, arm64]
@@ -24,16 +25,33 @@ jobs:
 
       - name: Run tests
         run: |
-          echo "Running tests for ${{ matrix.arch }} on ${{ matrix.os }}"
-          GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} go test ./... -v
+          echo "Running tests"
+          go test ./... -v
 
       - name: Run Go vet
         run: |
-          echo "Running Go vet for ${{ matrix.arch }} on ${{ matrix.os }}"
-          GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} go vet ./...
+          echo "Running Go vet"
+          go vet ./...
 
-      - name: Increment tag if needed (main branch only)
-        if: github.ref == 'refs/heads/main'
+      - name: Commit any changes
         run: |
-          echo "Incrementing tag if needed for ${{ matrix.arch }} on ${{ matrix.os }}"
-          go run .cmd/cicd-utilities git-increment-tag --tag-prefix "v" --tag-branch "main" --tag-commit "HEAD" --tag-version-file ".github/tag-version.txt"
+          echo "Committing any changes"
+          git config --global user.name "GitHub Actions"
+          git config --global user.email ""
+          git add .
+          git commit -m "fix: Update Go modules and tidy" || echo "No changes to commit"
+  update-tag:
+    runs-on: ubuntu-latest
+    needs: update-versions-and-test
+    if: github.actor != 'github-actions[bot]' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "stable"
+      - name: Increment tag if needed (main branch only)
+        run: |
+          echo "Incrementing tag if needed"
+          go run .cmd/acicd-utilities git-increment-tag --tag-prefix "v" 
