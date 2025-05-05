@@ -13,7 +13,7 @@ type BumpArray []Bump
 var Bumps = BumpArray{
 	{Level: "major", Hints: []string{"BREAKING CHANGE", "breaking:"}},
 	{Level: "minor", Hints: []string{"feat:"}},
-	{Level: "patch", Hints: []string{"fix:"}},
+	{Level: "patch", Hints: []string{"fix:", "chore:", "docs:", "style:", "refactor:", "perf:", "test:"}},
 }
 
 func (bumps BumpArray) GetVersionBump(commits []string) (string, error) {
