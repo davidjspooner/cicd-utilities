@@ -1,0 +1,39 @@
+name: Build, Test, and Release
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "*"
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+        os: [linux, darwin]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "stable"
+
+      - name: Run tests
+        run: |
+          echo "Running tests for ${{ matrix.arch }} on ${{ matrix.os }}"
+          GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} go test ./... -v
+
+      - name: Run Go vet
+        run: |
+          echo "Running Go vet for ${{ matrix.arch }} on ${{ matrix.os }}"
+          GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} go vet ./...
+
+      - name: Increment tag if needed (main branch only)
+        if: github.ref == 'refs/heads/main'
+        run: |
+          echo "Incrementing tag if needed for ${{ matrix.arch }} on ${{ matrix.os }}"
+          go run .cmd/cicd-utilities git-increment-tag --tag-prefix "v" --tag-branch "main" --tag-commit "HEAD" --tag-version-file ".github/tag-version.txt"
