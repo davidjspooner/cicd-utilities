@@ -29,6 +29,10 @@ func init() {
 }
 
 func executeUpdateGithubPRMeta(ctx context.Context, cmd command.Object, option *GithubPRUpdateOptions, args []string) error {
+	err := command.CheckUnparsedOptions(args)
+	if err != nil {
+		return err
+	}
 	if len(args) < 1 {
 		return fmt.Errorf("usage: update-github-pr-meta <pr-number> [--dry-run]")
 	}

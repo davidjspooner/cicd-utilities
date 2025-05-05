@@ -104,13 +104,14 @@ func (c *command[T]) Execute(ctx context.Context, args []string) error {
 						if err != nil {
 							return fmt.Errorf("failed to set value for field %s: %v", arg.field.Name, err)
 						}
+						expandedArgs = append(expandedArgs[:i], expandedArgs[i+1:]...)
 					} else if i+1 < len(expandedArgs) {
 						err := c.setField(f, expandedArgs[i+1])
 						if err != nil {
 							return fmt.Errorf("failed to set value for field %s: %v", arg.field.Name, err)
 						}
 						// Remove the next argument as it has been consumed
-						expandedArgs = append(expandedArgs[:i+1], expandedArgs[i+2:]...)
+						expandedArgs = append(expandedArgs[:i], expandedArgs[i+2:]...)
 					} else {
 						return fmt.Errorf("missing value for argument %s", name)
 					}
@@ -163,4 +164,13 @@ func (c *command[T]) Options() ([]Option, error) {
 		return nil, fmt.Errorf("failed to get defined args: %v", err)
 	}
 	return definedArgs, nil
+}
+
+func CheckUnparsedOptions(args []string) error {
+	for i := 0; i < len(args); i++ {
+		if strings.HasPrefix(args[i], "-") {
+			return fmt.Errorf("unknown argument %s", args[i])
+		}
+	}
+	return nil
 }

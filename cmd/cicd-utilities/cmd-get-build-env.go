@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"os"
 	"strings"
@@ -26,15 +25,10 @@ func init() {
 }
 
 func executeGetGitEnv(ctx context.Context, cmd command.Object, option *GetGitEnvOptions, args []string) error {
-	gitEnvCommand := flag.NewFlagSet("get-git-env", flag.ExitOnError)
-	gitEnvCommand.Usage = func() {
-		fmt.Println("Usage: cicd-utilities get-git-env [options]")
-		fmt.Println("Options:")
-		gitEnvCommand.PrintDefaults()
+	err := command.CheckUnparsedOptions(args)
+	if err != nil {
+		return err
 	}
-
-	gitEnvCommand.Parse(args)
-
 	// Get the current branch
 	currentBranch, err := git.GetCurrentBranch()
 	if err != nil {

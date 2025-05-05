@@ -32,6 +32,10 @@ func init() {
 }
 
 func versionCommand(ctx context.Context, cmd command.Object, options *VersionOptions, args []string) error {
+	err := command.CheckUnparsedOptions(args)
+	if err != nil {
+		return err
+	}
 	if options.Short {
 		fmt.Printf("%s\n", BuildName)
 		return nil

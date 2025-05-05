@@ -32,6 +32,10 @@ func init() {
 }
 
 func pgpSignFiles(ctx context.Context, cmd command.Object, option *SignOptions, args []string) error {
+	err := command.CheckUnparsedOptions(args)
+	if err != nil {
+		return err
+	}
 	files, err := globFiles(args)
 	if err != nil {
 		return fmt.Errorf("failed to glob files: %w", err)

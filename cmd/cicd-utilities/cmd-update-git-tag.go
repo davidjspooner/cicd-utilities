@@ -31,6 +31,10 @@ func init() {
 }
 
 func executeBumpGitTag(ctx context.Context, cmd command.Object, option *BumpGitTagOptions, args []string) error {
+	err := command.CheckUnparsedOptions(args)
+	if err != nil {
+		return err
+	}
 	// Get the current branch
 	currentBranch, err := git.GetCurrentBranch()
 	if err != nil {

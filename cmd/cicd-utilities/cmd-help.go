@@ -8,6 +8,10 @@ import (
 )
 
 func helpCommand(ctx context.Context, cmd command.Object, option *HelpOptions, args []string) error {
+	err := command.CheckUnparsedOptions(args)
+	if err != nil {
+		return err
+	}
 	return fmt.Errorf("help command not implemented")
 }
 

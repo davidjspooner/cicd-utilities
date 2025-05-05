@@ -7,14 +7,15 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strings"
+	"path"
 
 	"github.com/davidjspooner/cicd-utilities/pkg/command"
 )
 
 type ChecksumOptions struct {
-	Algorithm string `arg:"--algorithm,Checksum algorithm (e.g., sha256, md5)"`
-	Extension string `arg:"--extension,File extension override for the checksum file"`
+	Algorithm    string `arg:"--algorithm,Checksum algorithm (e.g., sha256, md5)"`
+	Extension    string `arg:"--extension,File extension for individual checksum files"`
+	CombinedFile string `arg:"--combined-file,Write all checksums to a single file"`
 }
 
 func init() {
@@ -30,6 +31,11 @@ func init() {
 }
 
 func executeChecksum(ctx context.Context, cmd command.Object, option *ChecksumOptions, args []string) error {
+	err := command.CheckUnparsedOptions(args)
+	if err != nil {
+		return err
+	}
+
 	if len(args) < 1 {
 		return fmt.Errorf("no files specified")
 	}
@@ -38,26 +44,51 @@ func executeChecksum(ctx context.Context, cmd command.Object, option *ChecksumOp
 	if err != nil {
 		return fmt.Errorf("error globbing files: %s", err)
 	}
-	extension := option.Extension
-	if extension == "" {
-		extension = option.Algorithm
+
+	if option.Extension == "" && option.CombinedFile == "" {
+		return fmt.Errorf("need to specify --extension and/or --combined-file")
 	}
-	if !strings.HasPrefix(extension, ".") {
-		extension = "." + extension
+
+	var combinedFile *os.File
+
+	if option.CombinedFile != "" {
+		combinedFile, err = os.Create(option.CombinedFile)
+		if err != nil {
+			return fmt.Errorf("failed to create combined checksum file: %v", err)
+		}
+		defer combinedFile.Close()
 	}
 
 	for _, file := range files {
-		checksum, err := generateChecksum(file, option.Algorithm, extension)
+		checksum, err := generateChecksum(file, option.Algorithm)
 		if err != nil {
 			return fmt.Errorf("error generating checksum for %s: %v", file, err)
 		}
-		fmt.Printf("%s: %s\n", file, checksum)
+		baseFile := path.Base(file)
+		if option.Extension != "" {
+			seperateFile, err := os.Create(file + option.Extension)
+			if err != nil {
+				return fmt.Errorf("failed to create checksum file: %v", err)
+			}
+			_, err = fmt.Fprintf(seperateFile, "%s  %s\n", checksum, baseFile)
+			fmt.Printf("%s %s\n", checksum, baseFile)
+			seperateFile.Close()
+			if err != nil {
+				return fmt.Errorf("failed to write checksum file: %v", err)
+			}
+		}
+		if option.CombinedFile != "" {
+			_, err = fmt.Fprintf(combinedFile, "%s  %s\n", checksum, baseFile)
+			if err != nil {
+				return fmt.Errorf("failed to write combined checksum file: %v", err)
+			}
+		}
 	}
 
 	return nil
 }
 
-func generateChecksum(file string, algorithm, extension string) (string, error) {
+func generateChecksum(file string, algorithm string) (string, error) {
 	stat, err := os.Stat(file)
 	if err != nil {
 		return "", fmt.Errorf("failed to stat file: %v", err)
@@ -95,11 +126,5 @@ func generateChecksum(file string, algorithm, extension string) (string, error) 
 	if checksum == "" {
 		return "", fmt.Errorf("failed to generate checksum")
 	}
-	output, err := os.Create(file + extension)
-	if err != nil {
-		return "", fmt.Errorf("failed to create checksum file: %v", err)
-	}
-	defer output.Close()
-	_, err = output.WriteString(checksum)
 	return checksum, err
 }
