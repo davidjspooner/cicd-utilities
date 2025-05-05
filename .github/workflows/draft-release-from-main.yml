@@ -58,8 +58,8 @@ jobs:
         run: |
           echo "Creating draft release"
           go run ./cmd/cicd-utilities github-release \
-            --tag "$(cat .github/tag-version.txt)" \
-            --name "Release $(cat .github/tag-version.txt)" \
+            --tag "hmm" \
+            --name "Release "${BUILD_VERSION}" \
             --draft \
             --body "#TODO create body" \
             --files dist/cicd-utilities-*.zip           
