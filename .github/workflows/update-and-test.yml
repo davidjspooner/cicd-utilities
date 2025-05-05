@@ -60,3 +60,5 @@ jobs:
         run: |
           echo "Incrementing tag if needed"
           go run ./cmd/cicd-utilities git-update-tag --prefix=v --verbose
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
