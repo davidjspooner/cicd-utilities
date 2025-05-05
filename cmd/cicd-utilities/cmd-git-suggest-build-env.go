@@ -16,7 +16,7 @@ type GetGitEnvOptions struct {
 
 func init() {
 	cmd := command.New(
-		"get-build-env",
+		"git-suggest-build-env",
 		"Get the environment variables for the current build",
 		executeGetGitEnv,
 		&GetGitEnvOptions{},
@@ -35,7 +35,7 @@ func executeGetGitEnv(ctx context.Context, cmd command.Object, option *GetGitEnv
 		return fmt.Errorf("failed to get current branch: %v", err)
 	}
 	fmt.Printf("BUILD_BRANCH=%s\n", currentBranch)
-	fmt.Printf("BUILD_NAME=%s\n", suggestBuildName())
+	fmt.Printf("BUILD_VERSION=%s\n", suggestBuildName())
 	fmt.Printf("BUILD_CONTEXT=%s\n", getBuildContext())
 	now := time.Now().UTC()
 	fmt.Printf("BUILD_TIME=%s\n", now.Format(time.RFC1123))
