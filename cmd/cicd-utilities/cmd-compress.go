@@ -35,7 +35,11 @@ func compressCommand(ctx context.Context, cmd command.Object, option *CompressOp
 	// Check if the correct number of arguments is provided
 
 	var err error
-	for _, path := range args {
+	paths, err := globFiles(args)
+	if err != nil {
+		return fmt.Errorf("error globbing files: %s", err)
+	}
+	for _, path := range paths {
 		switch option.Format {
 		case "zip":
 			err = compressToZip(path)

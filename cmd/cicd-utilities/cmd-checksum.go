@@ -34,7 +34,10 @@ func executeChecksum(ctx context.Context, cmd command.Object, option *ChecksumOp
 		return fmt.Errorf("no files specified")
 	}
 
-	files := args
+	files, err := globFiles(args)
+	if err != nil {
+		return fmt.Errorf("error globbing files: %s", err)
+	}
 	extension := option.Extension
 	if extension == "" {
 		extension = option.Algorithm
@@ -55,6 +58,16 @@ func executeChecksum(ctx context.Context, cmd command.Object, option *ChecksumOp
 }
 
 func generateChecksum(file string, algorithm, extension string) (string, error) {
+	stat, err := os.Stat(file)
+	if err != nil {
+		return "", fmt.Errorf("failed to stat file: %v", err)
+	}
+	if stat.IsDir() {
+		return "", fmt.Errorf("file is a directory: %s", file)
+	}
+	if stat.Size() == 0 {
+		return "", fmt.Errorf("file is empty: %s", file)
+	}
 	input, err := os.Open(file)
 	if err != nil {
 		return "", fmt.Errorf("failed to open file: %v", err)
