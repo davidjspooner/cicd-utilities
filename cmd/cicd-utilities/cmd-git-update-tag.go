@@ -119,6 +119,9 @@ func getLatestTag(branch string) (string, error) {
 	}
 	var bestVersion semantic.Version
 	var bestTag string
+	if global.Verbose {
+		fmt.Printf("Latest commits: %s\n", commits)
+	}
 	for _, commit := range splitLines(commits) {
 		if commit == "" {
 			continue
@@ -135,9 +138,13 @@ func getLatestTag(branch string) (string, error) {
 		if err != nil {
 			continue
 		}
+		if global.Verbose {
+			fmt.Printf("Tags for commit %s: %q\n", commit, tagsForCommit)
+		}
+
 		for _, tag := range splitLines(tagsForCommit) {
 			if global.Verbose {
-				fmt.Printf("Tag %s found for commit %s\n", tag, commit)
+				fmt.Printf("Tag %q found for commit %s\n", tag, commit)
 			}
 			_, _, version, err := semantic.ExtractVersionFromTag(tag)
 			if err != nil {
