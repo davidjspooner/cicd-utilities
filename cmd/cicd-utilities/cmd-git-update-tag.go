@@ -123,16 +123,6 @@ func getLatestTag(branch string) (string, error) {
 		fmt.Printf("Latest commits: %s\n", commits)
 	}
 	commitList := splitLines(commits)
-	if len(commitList) == 1 {
-		commits, err := git.Run("rev-list", "--tags", "--abbrev=0", commitList[0])
-		if err != nil {
-			return "", fmt.Errorf("failed to get latest commits: %v", err)
-		}
-		if global.Verbose {
-			fmt.Printf("Latest commits (alternate method): %s\n", commits)
-		}
-		commitList = append(commitList, splitLines(commits)...)
-	}
 	for _, commit := range commitList {
 		if commit == "" {
 			continue

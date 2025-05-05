@@ -48,6 +48,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+        with:
+          # Fetch all history for so that git rev-list can find the last tag
+          # This is needed for the git-update-tag command to work correctly
+          fetch-depth: 0
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
