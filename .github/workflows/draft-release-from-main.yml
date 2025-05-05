@@ -22,7 +22,7 @@ jobs:
         id: build-env
         run: |
           echo "Parsing build environment"
-          go run ./cmd/cicd-utilities get-build-env | tee >> $GITHUB_ENV
+          go run ./cmd/cicd-utilities git-suggest-build-env | tee >> $GITHUB_ENV
 
       - name: Build binaries
         run: |
