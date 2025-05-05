@@ -9,6 +9,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+        with:
+          # Fetch all history for so that git rev-list can find the last tag
+          # This is needed for the git-update-tag command to work correctly
+          fetch-depth: 0
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
@@ -52,7 +56,7 @@ jobs:
       - name: Create draft release
         run: |
           echo "Creating draft release"
-          go run .cmd/cicd-utilities create-release \
+          go run ./cmd/cicd-utilities create-release \
             --tag "$(cat .github/tag-version.txt)" \
             --name "Release $(cat .github/tag-version.txt)" \
             --draft \
