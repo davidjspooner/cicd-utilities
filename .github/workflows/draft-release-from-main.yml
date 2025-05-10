@@ -61,6 +61,7 @@ jobs:
             --name "Release ${BUILD_VERSION}" \
             --draft \
             --body "#TODO create body" \
+            --verbse \
             dist/cicd-utilities-*.zip           
         env:
           GITHUB_REPO: ${{ github.repository }}
