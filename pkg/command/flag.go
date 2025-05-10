@@ -128,10 +128,13 @@ func getFlagDefinitions[T any](defaults *T) ([]Flag, error) {
 
 		arg.aliases = aliases
 		var err error
+		arg.metaVar, arg.help, err = extractMetaVar(tagParts[1])
+		if err != nil {
+			return nil, fmt.Errorf("failed to extract metavar for field %s: %v", arg.field.Name, err)
+		}
 		if arg.help == "" {
 			return nil, fmt.Errorf("missing help text in tag for field %s", arg.field.Name)
 		}
-		arg.metaVar, arg.help, err = extractMetaVar(tagParts[1])
 		kind := arg.field.Type.Kind()
 		if kind == reflect.Bool {
 			if arg.metaVar != "" {

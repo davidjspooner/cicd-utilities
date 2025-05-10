@@ -19,13 +19,14 @@ func extractPlan(ctx context.Context) (*plan, bool) {
 
 // RootCommand is the top-level command for the application.
 var RootCommand Command = NewCommand(
-	os.Args[0],
+	"root",
 	"undefined description of overall command",
 	func(ctx context.Context, options *NoopOptions, args []string) error {
 		//noop
 		return nil
 	},
 	&NoopOptions{},
+	LogicalGroup,
 )
 
 // Run executes the top-level command with the given arguments.

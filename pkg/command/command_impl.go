@@ -3,6 +3,7 @@ package command
 import (
 	"fmt"
 	"os"
+	"path"
 	"regexp"
 	"strings"
 )
@@ -47,7 +48,11 @@ func NewCommand[T any](aliases, help string, execute ExecuteFunc[T], defaults *T
 		panic("defaults cannot be nil")
 	}
 	if aliases == "" {
-		aliases = os.Args[0]
+		aliases = path.Base(os.Args[0])
+		aliases = strings.TrimSuffix(aliases, path.Ext(aliases))
+		aliases = strings.Replace(aliases, "_", "-", -1)
+		aliases = strings.Trim(aliases, "-")
+
 	}
 	impl := &commandImpl[T]{
 		commonImpl: commonImpl{
