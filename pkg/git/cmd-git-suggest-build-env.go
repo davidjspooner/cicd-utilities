@@ -1,4 +1,4 @@
-package main
+package git
 
 import (
 	"context"
@@ -6,31 +6,14 @@ import (
 	"os"
 	"strings"
 	"time"
-
-	"github.com/davidjspooner/cicd-utilities/pkg/command"
-	"github.com/davidjspooner/cicd-utilities/pkg/git"
 )
 
 type GetGitEnvOptions struct {
 }
 
-func init() {
-	cmd := command.New(
-		"git-suggest-build-env",
-		"Get the environment variables for the current build",
-		executeGetGitEnv,
-		&GetGitEnvOptions{},
-	)
-	commands = append(commands, cmd)
-}
-
-func executeGetGitEnv(ctx context.Context, cmd command.Object, option *GetGitEnvOptions, args []string) error {
-	err := command.CheckUnparsedOptions(args)
-	if err != nil {
-		return err
-	}
+func executeGetGitEnv(ctx context.Context, options *GetGitEnvOptions, args []string) error {
 	// Get the current branch
-	currentBranch, err := git.GetCurrentBranch()
+	currentBranch, err := GetCurrentBranch()
 	if err != nil {
 		return fmt.Errorf("failed to get current branch: %v", err)
 	}
@@ -44,7 +27,7 @@ func executeGetGitEnv(ctx context.Context, cmd command.Object, option *GetGitEnv
 
 func suggestBuildName() string {
 	// Check for uncommitted changes
-	out, err := git.Run("status", "--porcelain")
+	out, err := Run("status", "--porcelain")
 	if err != nil {
 		return "UNKNOWN"
 	}
@@ -53,13 +36,13 @@ func suggestBuildName() string {
 	}
 
 	// Check for a tag version
-	tag, err := git.Run("tag", "--contains", "HEAD")
+	tag, err := Run("tag", "--contains", "HEAD")
 	if err == nil && tag != "" {
 		return tag
 	}
 
 	// Fallback to short commit hash
-	commitHash, err := git.Run("rev-parse", "--short", "HEAD")
+	commitHash, err := Run("rev-parse", "--short", "HEAD")
 	if err != nil {
 		return "UNKNOWN"
 	}

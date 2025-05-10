@@ -1,4 +1,4 @@
-package main
+package archive
 
 import (
 	"bytes"
@@ -8,34 +8,18 @@ import (
 	"os"
 
 	"github.com/ProtonMail/go-crypto/openpgp"
-	"github.com/davidjspooner/cicd-utilities/pkg/command"
 )
 
 type SignOptions struct {
 	// The name of the file to sign
-	KeyFile    string `arg:"--keyfile,PGP key file to use for signing"`
-	Key        string `arg:"$PGP_PRIVATE_KEY,PGP key to use for signing"`
-	Passphrase string `arg:"$PGP_PASSPHRASE,Passphrase for the PGP key"`
-	Extension  string `arg:"--extension,File extension override to use for the signed file"`
+	KeyFile    string `flag:"--keyfile,PGP key file to use for signing"`
+	Key        string `flag:"$PGP_PRIVATE_KEY,PGP key to use for signing"`
+	Passphrase string `flag:"$PGP_PASSPHRASE,Passphrase for the PGP key"`
+	Extension  string `flag:"--extension,File extension override to use for the signed file"`
 }
 
-func init() {
-	// Add the sign command to the root command
-	cmd := command.New("pgp-sign",
-		"Sign files with PGP",
-		pgpSignFiles,
-		&SignOptions{
-			Extension: ".sig",
-		},
-	)
-	commands = append(commands, cmd)
-}
+func pgpSignFiles(ctx context.Context, options *SignOptions, args []string) error {
 
-func pgpSignFiles(ctx context.Context, cmd command.Object, option *SignOptions, args []string) error {
-	err := command.CheckUnparsedOptions(args)
-	if err != nil {
-		return err
-	}
 	files, err := globFiles(args)
 	if err != nil {
 		return fmt.Errorf("failed to glob files: %w", err)
@@ -44,7 +28,7 @@ func pgpSignFiles(ctx context.Context, cmd command.Object, option *SignOptions, 
 		return fmt.Errorf("no files found")
 	}
 	for _, file := range files {
-		if err := pgpSignFile(file, option); err != nil {
+		if err := pgpSignFile(file, options); err != nil {
 			return fmt.Errorf("failed to sign file %s: %w", file, err)
 		}
 	}

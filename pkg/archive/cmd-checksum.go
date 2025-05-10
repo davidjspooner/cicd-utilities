@@ -1,4 +1,4 @@
-package main
+package archive
 
 import (
 	"context"
@@ -6,35 +6,18 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"path"
-
-	"github.com/davidjspooner/cicd-utilities/pkg/command"
 )
 
 type ChecksumOptions struct {
-	Algorithm    string `arg:"--algorithm,Checksum algorithm (e.g., sha256, md5)"`
-	Extension    string `arg:"--extension,File extension for individual checksum files"`
-	CombinedFile string `arg:"--combined-file,Write all checksums to a single file"`
+	Algorithm    string `flag:"--algorithm,Checksum algorithm (e.g., sha256, md5)"`
+	Extension    string `flag:"--extension,File extension for individual checksum files"`
+	CombinedFile string `flag:"--combined-file,Write all checksums to a single file"`
 }
 
-func init() {
-	cmd := command.New(
-		"checksum",
-		"Generate checksum(s) for file(s) using a specified algorithm",
-		executeChecksum,
-		&ChecksumOptions{
-			Algorithm: "sha256",
-		},
-	)
-	commands = append(commands, cmd)
-}
-
-func executeChecksum(ctx context.Context, cmd command.Object, option *ChecksumOptions, args []string) error {
-	err := command.CheckUnparsedOptions(args)
-	if err != nil {
-		return err
-	}
+func executeChecksum(ctx context.Context, option *ChecksumOptions, args []string) error {
 
 	if len(args) < 1 {
 		return fmt.Errorf("no files specified")
@@ -71,7 +54,7 @@ func executeChecksum(ctx context.Context, cmd command.Object, option *ChecksumOp
 				return fmt.Errorf("failed to create checksum file: %v", err)
 			}
 			_, err = fmt.Fprintf(seperateFile, "%s  %s\n", checksum, baseFile)
-			fmt.Printf("%s %s\n", checksum, baseFile)
+			slog.Debug("Checksum", "checksum", checksum, "file", baseFile)
 			seperateFile.Close()
 			if err != nil {
 				return fmt.Errorf("failed to write checksum file: %v", err)

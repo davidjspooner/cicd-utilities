@@ -2,6 +2,7 @@ package git
 
 import (
 	"fmt"
+	"strings"
 )
 
 func GetCurrentBranch() (string, error) {
@@ -10,4 +11,8 @@ func GetCurrentBranch() (string, error) {
 		return "", fmt.Errorf("failed to get current branch: %v", err)
 	}
 	return branch, nil
+}
+
+func splitLines(output string) []string {
+	return strings.Split(strings.TrimSpace(output), "\n")
 }

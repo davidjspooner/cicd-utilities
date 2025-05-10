@@ -1,4 +1,4 @@
-package main
+package archive
 
 import (
 	"archive/tar"
@@ -7,31 +7,17 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"path/filepath"
-
-	"github.com/davidjspooner/cicd-utilities/pkg/command"
 )
 
-func init() {
-	// Register the compress command
-	cmd := command.New(
-		"compress",
-		"Compress files or directories into zip or tar.gz formats",
-		compressCommand,
-		&CompressOptions{
-			Format: "tar.gz",
-		},
-	)
-	commands = append(commands, cmd)
-}
-
 type CompressOptions struct {
-	Format  string `arg:"--format,Format to compress the files (zip, tar.gz)"`
-	Replace bool   `arg:"--replace,Remove original files after compression"`
+	Format  string `flag:"--format,Format to compress the files (zip, tar.gz)"`
+	Replace bool   `flag:"--replace,Remove original files after compression"`
 }
 
-func compressCommand(ctx context.Context, cmd command.Object, option *CompressOptions, args []string) error {
+func compressCommand(ctx context.Context, option *CompressOptions, args []string) error {
 	// Check if the correct number of arguments is provided
 
 	var err error
@@ -52,21 +38,18 @@ func compressCommand(ctx context.Context, cmd command.Object, option *CompressOp
 		if err != nil {
 			return fmt.Errorf("error compressing file %s: %v", path, err)
 		}
-	}
-	if global.Verbose {
-		println("Compression completed successfully.")
+		slog.Debug("Compressed file successfully", "path", path, "format", option.Format)
 	}
 	if option.Replace {
 		// Call the function to remove original files
 		for _, path := range args {
 			err = removeOriginal(path)
+
 			if err != nil {
-				return fmt.Errorf("error removing original files: %s", err)
+				slog.Error("Error removing original file", "path", path, "error", err)
 			}
 		}
-		if global.Verbose {
-			println("Original files removed successfully.")
-		}
+		slog.Debug("Original files removed successfully", "paths", paths)
 	}
 	return nil
 }

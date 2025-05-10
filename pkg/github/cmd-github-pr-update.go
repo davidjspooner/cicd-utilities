@@ -1,38 +1,24 @@
-package main
+package github
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"strings"
 
-	"github.com/davidjspooner/cicd-utilities/pkg/command"
 	"github.com/davidjspooner/cicd-utilities/pkg/semantic"
 )
 
 type GithubPRUpdateOptions struct {
-	PRNumber string `arg:"<pr-number>,Pull request number"`
-	DryRun   bool   `arg:"--dry-run,Do not update the PR title"`
+	PRNumber string `flag:"<pr-number>,Pull request number"`
+	DryRun   bool   `flag:"--dry-run,Do not update the PR title"`
 }
 
-func init() {
-	cmd := command.New(
-		"github-pr-update",
-		"Update GitHub PR metadata (title) based on commit messages (e.g., fix:, feat:, breaking:)",
-		executeUpdateGithubPRMeta,
-		&GithubPRUpdateOptions{},
-	)
-	commands = append(commands, cmd)
-}
-
-func executeUpdateGithubPRMeta(ctx context.Context, cmd command.Object, option *GithubPRUpdateOptions, args []string) error {
-	err := command.CheckUnparsedOptions(args)
-	if err != nil {
-		return err
-	}
+func executeUpdateGithubPRMeta(ctx context.Context, option *GithubPRUpdateOptions, args []string) error {
 	if len(args) < 1 {
 		return fmt.Errorf("usage: update-github-pr-meta <pr-number> [--dry-run]")
 	}
@@ -58,12 +44,12 @@ func executeUpdateGithubPRMeta(ctx context.Context, cmd command.Object, option *
 	}
 
 	//get the current PR title
-	prTitle, err := getPullRequestTitle(option.PRNumber, token, repo)
+	prTitle, err := getPullRequestTitle(ctx, option.PRNumber, token, repo)
 	if err != nil {
 		return fmt.Errorf("error fetching PR title: %v", err)
 	}
 	if strings.Contains(prTitle, bump) {
-		fmt.Printf("PR #%s already has the bump %s in the title.\n", option.PRNumber, bump)
+		slog.Info("PR title already contains the bump", "pr", option.PRNumber, "bump", bump)
 		return nil
 	}
 
@@ -71,13 +57,12 @@ func executeUpdateGithubPRMeta(ctx context.Context, cmd command.Object, option *
 	newTitle := fmt.Sprintf("%s: update based on commits", bump)
 
 	if option.DryRun {
-		fmt.Println("Dry run enabled.")
-		fmt.Printf("Would update PR #%s with title: %s\n", option.PRNumber, newTitle)
+		slog.Warn("Dry run mode enabled", "pr", option.PRNumber, "title", newTitle)
 		return nil
 	}
 
 	// Update PR via GitHub API
-	return updatePullRequest(option.PRNumber, token, repo, newTitle)
+	return updatePullRequest(ctx, option.PRNumber, token, repo, newTitle)
 }
 
 func getCommitMessages(prNumber, token, repo string) []string {
@@ -108,7 +93,7 @@ func getCommitMessages(prNumber, token, repo string) []string {
 	return messages
 }
 
-func updatePullRequest(prNumber, token, repo, title string) error {
+func updatePullRequest(ctx context.Context, prNumber, token, repo, title string) error {
 	url := fmt.Sprintf("https://api.github.com/repos/%s/pulls/%s", repo, prNumber)
 
 	pr := struct {
@@ -126,12 +111,17 @@ func updatePullRequest(prNumber, token, repo, title string) error {
 	if err != nil || resp.StatusCode >= 300 {
 		return fmt.Errorf("failed to update PR: %v", err)
 	}
+	defer resp.Body.Close()
 
-	fmt.Printf("Updated PR #%s with new title.\n", prNumber)
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("failed to update PR, status code: %d", resp.StatusCode)
+	}
+
+	slog.Info("Updated PR title", "pr", prNumber, "title", title)
 	return nil
 }
 
-func getPullRequestTitle(prNumber, token, repo string) (string, error) {
+func getPullRequestTitle(ctx context.Context, prNumber, token, repo string) (string, error) {
 	url := fmt.Sprintf("https://api.github.com/repos/%s/pulls/%s", repo, prNumber)
 
 	req, _ := http.NewRequest("GET", url, nil)
@@ -144,6 +134,9 @@ func getPullRequestTitle(prNumber, token, repo string) (string, error) {
 		return "", fmt.Errorf("failed to fetch PR title: %v", err)
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		return "", fmt.Errorf("failed to fetch PR title, status code: %d", resp.StatusCode)
+	}
 
 	var result struct {
 		Title string `json:"title"`

@@ -2,39 +2,38 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"log/slog"
 	"os"
 
+	"github.com/davidjspooner/cicd-utilities/pkg/archive"
 	"github.com/davidjspooner/cicd-utilities/pkg/command"
+	"github.com/davidjspooner/cicd-utilities/pkg/git"
 )
 
 type GlobalOptions struct {
-	Verbose bool `arg:"--verbose,Enable verbose output"`
+	command.LogOptions
 }
 
-var global GlobalOptions
-
-var commands = command.Group{}
-
 func main() {
-
-	mainCommand := command.New("", "A utility for CI/CD operations",
-		func(ctx context.Context, cmd command.Object, options *GlobalOptions, args []string) error {
-
-			global = *options
-			// Parse the command line arguments
-			if len(args) < 1 {
-				fmt.Println("Usage: cicd-utility <command> --options")
-				return nil
+	command.RootCommand = command.NewCommand("", "A utility for CI/CD operations",
+		func(ctx context.Context, options *GlobalOptions, args []string) error {
+			level, err := options.LogOptions.Parse()
+			slog.SetLogLoggerLevel(level)
+			if err != nil {
+				return err
 			}
-			err := commands.Execute(context.Background(), args[0], args[1:])
-			return err
+			return nil
+		}, &GlobalOptions{LogOptions: command.LogOptions{Level: "info"}},
+		command.LogicalGroup)
 
-		}, &global)
+	versionCommand := command.VersionCommand()
+	gitCommands := git.Commands()
+	archiveCommands := archive.Commands()
+	command.RootCommand.SubCommands().MustAdd(versionCommand, gitCommands, archiveCommands)
 
-	err := mainCommand.Execute(context.Background(), os.Args[1:])
+	err := command.Run(context.Background(), os.Args[1:])
 	if err != nil {
-		fmt.Printf("Error executing command: %v\n", err)
+		slog.Error("Failed Execution", "msg", err)
 		os.Exit(1)
 	}
 }

@@ -1,4 +1,4 @@
-package main
+package git
 
 import (
 	"context"
@@ -6,38 +6,20 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/davidjspooner/cicd-utilities/pkg/command"
-	"github.com/davidjspooner/cicd-utilities/pkg/git"
 	"github.com/davidjspooner/cicd-utilities/pkg/semantic"
 )
 
-// BumpGitTagOptions defines the options for the git-update-tag command.
 type BumpGitTagOptions struct {
-	Prefix string `flag:"--prefix,Prefix string"`             // Prefix to add to the tag.
-	Suffix string `flag:"--suffix,Suffix string"`             // Suffix to add to the tag.
-	DryRun bool   `flag:"--dry-run,Do not push the tag"`      // If true, do not push the tag.
-	Remote string `flag:"--remote,Remote to push the tag to"` // Remote repository to push the tag to.
+	Prefix string `flag:"--prefix,Prefix string"`
+	Suffix string `flag:"--suffix,Suffix string"`
+	DryRun bool   `flag:"--dry-run,Do not push the tag"`
+	Remote string `flag:"--remote,Remote to push the tag to"`
 }
 
-// init initializes the git-update-tag command and adds it to the top-level commands.
-func init() {
-	cmd := command.NewCommand(
-		"git-update-tag",
-		"Automatically increment Git tags based on commit messages (e.g., fix:, feat:, breaking:)",
-		executeBumpGitTag,
-		&BumpGitTagOptions{
-			Remote: "origin",
-			Prefix: "v",
-		},
-	)
-	command.RootCommand.SubCommands().MustAdd(cmd)
-}
-
-// executeBumpGitTag executes the git-update-tag command.
-func executeBumpGitTag(ctx context.Context, options *BumpGitTagOptions, args []string) error {
+func executeBumpGitTag(ctx context.Context, option *BumpGitTagOptions, args []string) error {
 
 	// Get the current branch
-	currentBranch, err := git.GetCurrentBranch()
+	currentBranch, err := GetCurrentBranch()
 	if err != nil {
 		return fmt.Errorf("failed to get current branch: %v", err)
 	}
@@ -57,7 +39,7 @@ func executeBumpGitTag(ctx context.Context, options *BumpGitTagOptions, args []s
 	slog.Info("Current version", "version", currentVersion.String())
 
 	// Get commit messages since the latest tag
-	commitMessages, err := git.Run("log", fmt.Sprintf("%s..HEAD", latestTag), "--pretty=format:%s")
+	commitMessages, err := Run("log", fmt.Sprintf("%s..HEAD", latestTag), "--pretty=format:%s")
 	if err != nil {
 		return fmt.Errorf("failed to get commit messages: %v", err)
 	}
@@ -88,21 +70,21 @@ func executeBumpGitTag(ctx context.Context, options *BumpGitTagOptions, args []s
 	}
 
 	// Construct the new tag
-	newTag := fmt.Sprintf("%s%s%s", options.Prefix, newVersion.String(), options.Suffix)
+	newTag := fmt.Sprintf("%s%s%s", option.Prefix, newVersion.String(), option.Suffix)
 
 	fmt.Printf("Increment: %s\n", increment)
 
-	if options.DryRun {
+	if option.DryRun {
 		fmt.Println("Dry run enabled.")
 		fmt.Printf("Would create new tag: %s\n", newTag)
 		return nil
 	}
 
 	// Create and push the new tag
-	if _, err := git.Run("tag", newTag); err != nil {
+	if _, err := Run("tag", newTag); err != nil {
 		return fmt.Errorf("failed to create tag: %v", err)
 	}
-	if _, err := git.Run("push", options.Remote, newTag); err != nil {
+	if _, err := Run("push", option.Remote, newTag); err != nil {
 		return fmt.Errorf("failed to push tag: %v", err)
 	}
 
@@ -110,10 +92,9 @@ func executeBumpGitTag(ctx context.Context, options *BumpGitTagOptions, args []s
 	return nil
 }
 
-// getLatestTag gets the latest tag for the given branch.
 func getLatestTag(ctx context.Context, branch string) (string, error) {
 
-	commits, err := git.Run("rev-list", "--tags", "--no-walk", "--abbrev=0", "--date-order", branch)
+	commits, err := Run("rev-list", "--tags", "--no-walk", "--abbrev=0", "--date-order", branch)
 	if err != nil {
 		return "", fmt.Errorf("failed to get latest tags: %v", err)
 	}
@@ -127,12 +108,12 @@ func getLatestTag(ctx context.Context, branch string) (string, error) {
 			continue
 		}
 		commit = strings.TrimSpace(commit)
-		checkCmd, err := git.Run("merge-base", "--is-ancestor", commit, branch)
+		checkCmd, err := Run("merge-base", "--is-ancestor", commit, branch)
 		if err != nil {
 			continue
 		}
 		slog.Debug("Checked commit is ancestor", "commit", commit, "branch", branch, "checkCmd", checkCmd)
-		tagsForCommit, err := git.Run("tag", "--contains", commit)
+		tagsForCommit, err := Run("tag", "--contains", commit)
 		if err != nil {
 			continue
 		}
