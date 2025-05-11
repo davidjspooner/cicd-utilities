@@ -28,14 +28,12 @@ func (b *lineBuilder) reset() {
 
 func (b *lineBuilder) flushAsString() string {
 	text := b.line.String()
-	if b.wrapSpec.Color == AllowColor && len(b.sgr.attrs) > 0 {
-		text += "\x1b[0m"
-	}
+	text = strings.TrimRight(text, " \t")
 	result := applyAlignment(text, b.wrapSpec.Width, b.wrapSpec.Align, b.wrapSpec.PadChar)
-	b.reset()
 	if b.wrapSpec.Color == AllowColor && len(b.sgr.attrs) > 0 {
-		b.line.WriteString(b.sgr.string()) // Reapply color codes for the next line
+		result += "\x1b[0m"
 	}
+	b.reset() //includes start of new line with sgr
 	return result
 }
 

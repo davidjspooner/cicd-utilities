@@ -166,6 +166,6 @@ func TestEmbeddedColorsAllowColorTrue(t *testing.T) {
 func TestEmbeddedColorsAllowColorTrueMultipleLines(t *testing.T) {
 	wrapspec := &textfmt.WrapSpec{Width: 15, Align: textfmt.Left, PadChar: ' ', Color: textfmt.AllowColor}
 	input := "\u001b[31mRed\u001b[0m and \u001b[32mGreen\u001b[0m\n\u001b[34mBlue\u001b[0m"
-	expected := []string{"\u001b[31mRed\u001b[0m and \u001b[32mGreen\u001b[0m  ", "\u001b[34mBlue\u001b[0m          "}
+	expected := []string{"\u001b[31mRed\u001b[0m and \u001b[32mGreen\u001b[0m  ", "\u001b[34mBlue\u001b[0m           "}
 	GenericWrapTestFunction(t, "Embedded colors with AllowColor true across multiple lines", wrapspec, input, expected, "")
 }
