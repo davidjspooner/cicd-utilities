@@ -5,51 +5,33 @@ import (
 )
 
 type lineBuilder struct {
-	line   strings.Builder
-	width  int
-	sgr    *sgrState
-	color  ColorControl
-	align  Align
-	pad    rune
-	target int
+	line     strings.Builder
+	width    int
+	sgr      *sgrState
+	wrapSpec *WrapSpec
 }
 
-func newLineBuilder(sgr *sgrState, color ColorControl, align Align, pad rune, targetWidth int) *lineBuilder {
+func newLineBuilder(sgr *sgrState, wrapSpec *WrapSpec) *lineBuilder {
 	return &lineBuilder{
-		sgr:    sgr.copy(),
-		color:  color,
-		align:  align,
-		pad:    pad,
-		target: targetWidth,
+		sgr:      sgr.copy(),
+		wrapSpec: wrapSpec,
 	}
 }
 
 func (b *lineBuilder) reset() {
 	b.line.Reset()
 	b.width = 0
-	if b.color == AllowColor && len(b.sgr.attrs) > 0 {
+	if b.wrapSpec.Color == AllowColor && len(b.sgr.attrs) > 0 {
 		b.line.WriteString(b.sgr.string())
 	}
 }
 
-func (b *lineBuilder) flushTo(lines *[]*Line) {
-	text := b.line.String()
-	if b.color == AllowColor && len(b.sgr.attrs) > 0 {
-		text += "\x1b[0m"
-	}
-	*lines = append(*lines, &Line{
-		Text:  applyAlignment(text, b.target, b.align, b.pad),
-		width: 0,
-	})
-	b.reset()
-}
-
 func (b *lineBuilder) flushAsString() string {
 	text := b.line.String()
-	if b.color == AllowColor && len(b.sgr.attrs) > 0 {
+	if b.wrapSpec.Color == AllowColor && len(b.sgr.attrs) > 0 {
 		text += "\x1b[0m"
 	}
-	result := applyAlignment(text, b.target, b.align, b.pad)
+	result := applyAlignment(text, b.wrapSpec.Width, b.wrapSpec.Align, b.wrapSpec.PadChar)
 	b.reset()
 	return result
 }
@@ -69,18 +51,18 @@ func (b *lineBuilder) writeSpace() {
 	b.width++
 }
 
-func (b *lineBuilder) writeTab(tabStop int) {
-	spaces := ((b.width/tabStop)+1)*tabStop - b.width
+func (b *lineBuilder) writeTab() {
+	spaces := ((b.width/b.wrapSpec.TabStop)+1)*b.wrapSpec.TabStop - b.width
 	b.line.WriteString(strings.Repeat(" ", spaces))
 	b.width += spaces
 }
 
 func (b *lineBuilder) canFit(w int) bool {
-	return b.width+w <= b.target
+	return b.width+w <= b.wrapSpec.Width
 }
 
 func (b *lineBuilder) remaining() int {
-	return b.target - b.width
+	return b.wrapSpec.Width - b.width
 }
 
 func (b *lineBuilder) len() int {

@@ -1,6 +1,7 @@
 package textfmt
 
 import (
+	"fmt"
 	"sort"
 	"strconv"
 	"strings"
@@ -50,9 +51,9 @@ func (s *sgrState) string() string {
 	return "\x1b[" + strings.Join(parts, ";") + "m"
 }
 
-func parseSGRCodes(seq string) []int {
+func parseSGRCodes(seq string) ([]int, error) {
 	if !strings.HasPrefix(seq, "\x1b[") || !strings.HasSuffix(seq, "m") {
-		return nil
+		return nil, fmt.Errorf("invalid SGR sequence format")
 	}
 	body := seq[2 : len(seq)-1] // strip \x1b[ and trailing 'm'
 	parts := strings.Split(body, ";")
@@ -61,9 +62,11 @@ func parseSGRCodes(seq string) []int {
 		if p == "" {
 			continue
 		}
-		if val, err := strconv.Atoi(p); err == nil {
-			codes = append(codes, val)
+		val, err := strconv.Atoi(p)
+		if err != nil || !isValidSGRCode(val) {
+			return nil, fmt.Errorf("invalid SGR code")
 		}
+		codes = append(codes, val)
 	}
-	return codes
+	return codes, nil
 }

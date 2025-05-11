@@ -6,6 +6,21 @@ import (
 	"unicode"
 )
 
+type Align int
+
+const (
+	Left Align = iota
+	Center
+	Right
+)
+
+type ColorControl int
+
+const (
+	NoColor ColorControl = iota
+	AllowColor
+)
+
 type WrapSpec struct {
 	Width   int
 	TabStop int
@@ -25,13 +40,13 @@ func NewWrapSpec(width, tabStop int, align Align, color ColorControl, padChar ru
 }
 
 // WordWrap wraps raw input into aligned, color-aware, padded lines.
-func (w *WrapSpec) WordWrap(text string) []string {
+func (w *WrapSpec) WordWrap(text string) ([]string, error) {
 	scanner := newScanner(text)
 	var lines []string
 	var word strings.Builder
 	var wordWidth int
 	activeSGR := newSGRState()
-	lb := newLineBuilder(activeSGR, w.Color, w.Align, w.PadChar, w.Width)
+	lb := newLineBuilder(activeSGR, w)
 
 	for {
 		tok := scanner.nextToken()
@@ -41,8 +56,11 @@ func (w *WrapSpec) WordWrap(text string) []string {
 
 		switch tok.Type {
 		case tokenColor:
+			codes, err := parseSGRCodes(tok.Value)
+			if err != nil {
+				return nil, err
+			}
 			if w.Color == AllowColor {
-				codes := parseSGRCodes(tok.Value)
 				for _, code := range codes {
 					activeSGR.apply(code)
 				}
@@ -57,7 +75,7 @@ func (w *WrapSpec) WordWrap(text string) []string {
 				word.Reset()
 				wordWidth = 0
 			}
-			lb.writeTab(w.TabStop)
+			lb.writeTab()
 		case tokenWhitespace:
 			if word.Len() > 0 {
 				if !lb.canFit(wordWidth) {
@@ -105,7 +123,20 @@ func (w *WrapSpec) WordWrap(text string) []string {
 		lines = append(lines, lb.flushAsString())
 	}
 
-	return lines
+	return lines, nil
+}
+
+func isValidSGRCode(code int) bool {
+	// Define a set of valid SGR codes based on the ANSI standard.
+	validCodes := map[int]bool{
+		0: true, 1: true, 2: true, 3: true, 4: true, 5: true, 6: true, 7: true,
+		8: true, 9: true, 30: true, 31: true, 32: true, 33: true, 34: true, 35: true,
+		36: true, 37: true, 40: true, 41: true, 42: true, 43: true, 44: true, 45: true,
+		46: true, 47: true, 90: true, 91: true, 92: true, 93: true, 94: true, 95: true,
+		96: true, 97: true, 100: true, 101: true, 102: true, 103: true, 104: true,
+		105: true, 106: true, 107: true,
+	}
+	return validCodes[code]
 }
 
 func (s *WrapSpec) normalizeSpec() {
@@ -121,7 +152,18 @@ func (s *WrapSpec) normalizeSpec() {
 }
 
 func applyAlignment(s string, width int, align Align, padChar rune) string {
+
+	switch align {
+	case Left:
+		s = strings.TrimRight(s, " ")
+		s = strings.TrimRight(s, string(padChar))
+	case Right, Center:
+		s = strings.TrimSpace(s)
+		s = strings.Trim(s, string(padChar))
+	}
+
 	plain := ansiEscapeRe.ReplaceAllString(s, "")
+
 	actualWidth := 0
 	for _, r := range plain {
 		if r == 0 || unicode.Is(unicode.Mn, r) {

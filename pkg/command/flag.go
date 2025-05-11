@@ -104,7 +104,8 @@ func getFlagDefinitions[T any](defaults *T) ([]Flag, error) {
 		}
 
 		allowedPrefixes := []string{"--", "-", "$"}
-		lowerAlphaNumeric := regexp.MustCompile(`^[a-z,0-9]+$`)
+		lowerAlphaNumeric := regexp.MustCompile(`^[a-z,0-9-]+$`)
+		upperCase := regexp.MustCompile(`^[A-Z,0-9_]+$`)
 		for _, alias := range aliases {
 			alias = strings.TrimSpace(alias)
 			var aliasWithoutPrefix string
@@ -117,8 +118,14 @@ func getFlagDefinitions[T any](defaults *T) ([]Flag, error) {
 			if aliasWithoutPrefix == "" {
 				return nil, fmt.Errorf("invalid alias %q in tag for field %s", alias, arg.field.Name)
 			}
-			if !lowerAlphaNumeric.MatchString(aliasWithoutPrefix) {
-				return nil, fmt.Errorf("invalid alias %q in tag for field %s", alias, arg.field.Name)
+			if strings.HasPrefix(alias, "$") {
+				if !upperCase.MatchString(aliasWithoutPrefix) {
+					return nil, fmt.Errorf("invalid alias %q in tag for field %s", alias, arg.field.Name)
+				}
+			} else {
+				if !lowerAlphaNumeric.MatchString(aliasWithoutPrefix) {
+					return nil, fmt.Errorf("invalid alias %q in tag for field %s", alias, arg.field.Name)
+				}
 			}
 			if _, exists := seenaliases[aliasWithoutPrefix]; exists {
 				return nil, fmt.Errorf("duplicate name %q in tag for field %s", alias, arg.field.Name)

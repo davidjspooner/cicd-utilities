@@ -11,9 +11,13 @@ type Block struct {
 
 func NewBlock(input string) *Block {
 	trimmed := strings.TrimSpace(input)
-	normalized := collapseBreakableSpaces(trimmed)
-	lines := []*Line{&Line{Text: normalized}}
-	return &Block{Lines: lines}
+	lines := strings.Split(trimmed, "\\n")
+	normalizedLines := make([]*Line, len(lines))
+	for i, line := range lines {
+		normalized := collapseBreakableSpaces(line)
+		normalizedLines[i] = &Line{Text: normalized}
+	}
+	return &Block{Lines: normalizedLines}
 }
 
 func (b *Block) Width(tabStop int) int {
@@ -24,15 +28,16 @@ func (b *Block) Width(tabStop int) int {
 	return w
 }
 
-func (b *Block) WordWrap(width int, tabStop int, align Align, color ColorControl, padChar rune) []string {
-	if padChar == 0 {
-		padChar = ' '
-	}
+func (b *Block) WordWrap(spec *WrapSpec) ([]string, error) {
 	var wrapped []string
 	for _, l := range b.Lines {
-		wrapped = append(wrapped, l.WordWrap(width, tabStop, align, color, padChar)...)
+		lines, err := l.WordWrap(spec)
+		if err != nil {
+			return nil, err
+		}
+		wrapped = append(wrapped, lines...)
 	}
-	return wrapped
+	return wrapped, nil
 }
 
 func collapseBreakableSpaces(s string) string {

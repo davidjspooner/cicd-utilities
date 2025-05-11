@@ -63,7 +63,8 @@ func (s *scanner) nextToken() Token {
 			}
 			break
 		}
-		return Token{Type: tokenColor, Value: s.input[start:s.pos], Width: 0}
+		value := s.input[start:s.pos]
+		return Token{Type: tokenColor, Value: value, Width: 0}
 	}
 
 	if unicode.IsSpace(r) {

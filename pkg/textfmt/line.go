@@ -7,21 +7,6 @@ import (
 
 var ansiEscapeRe = regexp.MustCompile(`\x1b\[[0-9;]*[A-Za-z]`)
 
-type Align int
-
-const (
-	Left Align = iota
-	Center
-	Right
-)
-
-type ColorControl int
-
-const (
-	NoColor ColorControl = iota
-	AllowColor
-)
-
 type Line struct {
 	Text  string
 	width int
@@ -58,9 +43,12 @@ func (f *Line) StripColors() {
 	f.width = 0
 }
 
-func (f *Line) WordWrap(width int, tabStop int, align Align, color ColorControl, padChar rune) []string {
-	spec := NewWrapSpec(width, tabStop, align, color, padChar)
-	return spec.WordWrap(f.Text)
+func (f *Line) WordWrap(spec *WrapSpec) ([]string, error) {
+	wrappedLines, err := spec.WordWrap(f.Text)
+	if err != nil {
+		return nil, err
+	}
+	return wrappedLines, nil
 }
 
 func isWideRune(r rune) bool {
