@@ -1,11 +1,15 @@
 package command
 
 import (
+	"encoding"
 	"fmt"
 	"reflect"
 	"regexp"
 	"strings"
 )
+
+var textUnmarshalerType = reflect.TypeOf((*encoding.TextUnmarshaler)(nil)).Elem()
+var textMarshalerType = reflect.TypeOf((*encoding.TextMarshaler)(nil)).Elem()
 
 type Flag struct {
 	aliases      []string
@@ -171,10 +175,23 @@ func getRFlagDefinitions(rDefaults reflect.Value, fieldPath []reflect.StructFiel
 				arg.metaVar = fmt.Sprintf("<%s>", strings.ToLower(field.Type.Name()))
 			}
 		}
+
+		// Check if the field implements encoding.TextUnmarshaler or encoding.TextMarshaler
 		fieldValue := rDefaults.FieldByName(field.Name)
-		if (!fieldValue.IsZero()) && fieldValue.CanInterface() {
+		if fieldValue.Addr().Type().Implements(textUnmarshalerType) {
+			arg.defaultValue = "(implements TextUnmarshaler)"
+		} else if fieldValue.Addr().Type().Implements(textMarshalerType) {
+			marshaler := fieldValue.Addr().Interface().(encoding.TextMarshaler)
+			if marshaler != nil {
+				text, err := marshaler.MarshalText()
+				if err == nil {
+					arg.defaultValue = string(text)
+				}
+			}
+		} else if (!fieldValue.IsZero()) && fieldValue.CanInterface() {
 			arg.defaultValue = fmt.Sprintf("%v", fieldValue.Interface())
 		}
+
 		args = append(args, arg)
 	}
 

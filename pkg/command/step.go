@@ -2,6 +2,7 @@ package command
 
 import (
 	"context"
+	"encoding"
 	"fmt"
 	"os"
 	"reflect"
@@ -58,7 +59,7 @@ func (step *stepImpl[T]) parseEnvAndArgs(args []string) ([]string, error) {
 	}
 	rOpts := reflect.ValueOf(&step.opts).Elem()
 
-	err = step.ParseEnv(definedArgs, rOpts)
+	err = step.parseEnv(definedArgs, rOpts)
 	if err != nil {
 		return args, fmt.Errorf("failed to parse env: %v", err)
 	}
@@ -69,7 +70,7 @@ func (step *stepImpl[T]) parseEnvAndArgs(args []string) ([]string, error) {
 	return args, nil
 }
 
-func (step *stepImpl[T]) ParseEnv(flags []Flag, rOpts reflect.Value) error {
+func (step *stepImpl[T]) parseEnv(flags []Flag, rOpts reflect.Value) error {
 	for _, flag := range flags {
 		for _, name := range flag.aliases {
 			envValue, exists := os.LookupEnv(name)
@@ -173,6 +174,15 @@ func setFieldForArg(flag Flag, name string, i int, args []string, rOpts reflect.
 }
 
 func setFieldValue(value string, rField reflect.Value) error {
+	// Check if the field implements the TextUnmarshaler interface
+	if rField.Addr().Type().Implements(reflect.TypeOf((*encoding.TextUnmarshaler)(nil)).Elem()) {
+		unmarshaler := rField.Addr().Interface().(encoding.TextUnmarshaler)
+		if err := unmarshaler.UnmarshalText([]byte(value)); err != nil {
+			return fmt.Errorf("failed to unmarshal text for field: %v", err)
+		}
+		return nil
+	}
+
 	// Set the value for the option
 	switch rField.Kind() {
 	case reflect.Bool:
