@@ -84,9 +84,20 @@ func renderHelpText(plan *plan) error {
 		}
 		for _, flag := range flags {
 			name := flag.Aliases()[0]
-			table.AddRow("", name, "-", flag.Help())
+			metaVar := flag.MetaVar()
+			if metaVar != "" {
+				name = fmt.Sprintf("%s %s", name, metaVar)
+			}
+			defaultValue := flag.DefaultValue()
+			help := flag.Help()
+			if defaultValue != "" {
+				help = fmt.Sprintf("%s (default: %s)", help, defaultValue)
+			}
+
+			table.AddRow("", name, "-", help)
 		}
 	}
 	err := table.RenderTo(os.Stdout)
+	os.Stdout.WriteString("\n\n")
 	return err
 }

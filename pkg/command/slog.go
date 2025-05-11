@@ -6,7 +6,8 @@ import (
 )
 
 type LogOptions struct {
-	Level string `flag:"--loglevel,Log level (debug|info|warn|error),env:LOGLEVEL"`
+	Level   string `flag:"--loglevel,Log level (debug|info|warn|error)"`
+	Verbose bool   `flag:"--verbose,Verbose output (alias for --loglevel debug)"`
 }
 
 func (options *LogOptions) Parse() (slog.Level, error) {
@@ -15,6 +16,9 @@ func (options *LogOptions) Parse() (slog.Level, error) {
 	var err error
 	if options == nil {
 		options = &LogOptions{Level: "info"}
+	}
+	if options.Level == "" && options.Verbose {
+		options.Level = "debug"
 	}
 	switch options.Level {
 	case "debug":

@@ -74,12 +74,30 @@ func (step *stepImpl[T]) ParseEnv(flags []Flag, rOpts reflect.Value) error {
 		for _, name := range flag.aliases {
 			envValue, exists := os.LookupEnv(name)
 			if exists {
+				// Walk the fieldPath to locate the correct field
+				rField := rOpts
+				fieldPathName := ""
+				for i, field := range flag.fieldPath {
+					if i != 0 {
+						fieldPathName += "."
+					}
+					fieldPathName += field.Name
+					rField = rField.FieldByName(field.Name)
+					if !rField.IsValid() {
+						return fmt.Errorf("field %s not found in options", fieldPathName)
+					}
+				}
+
+				if !rField.CanSet() {
+					return fmt.Errorf("field %s cannot be set", fieldPathName)
+				}
+
 				var err error
-				if flag.field.Type.Kind() == reflect.Bool {
+				if rField.Kind() == reflect.Bool {
 					// If the flag is a boolean, set it to true if the env variable is set
-					err = setFieldValue(flag, "true", rOpts.FieldByName(flag.field.Name))
+					err = setFieldValue("true", rField)
 				} else {
-					err = setFieldValue(flag, envValue, rOpts.FieldByName(flag.field.Name))
+					err = setFieldValue(envValue, rField)
 				}
 				if err != nil {
 					return err
@@ -118,24 +136,35 @@ func (step *stepImpl[T]) parseArgs(flags []Flag, args []string, rOpts reflect.Va
 }
 
 func setFieldForArg(flag Flag, name string, i int, args []string, rOpts reflect.Value) (removed int, err error) {
-	rField := rOpts.FieldByName(flag.field.Name)
-	if !rField.IsValid() {
-		return 0, fmt.Errorf("field %s not found in options", flag.field.Name)
+	// Walk the fieldPath to locate the correct field
+	rField := rOpts
+	fieldPathString := ""
+	for j, field := range flag.fieldPath {
+		if j != 0 {
+			fieldPathString += "."
+		}
+		fieldPathString += field.Name
+		rField = rField.FieldByName(field.Name)
+		if !rField.IsValid() {
+			return 0, fmt.Errorf("field %s not found in options", fieldPathString)
+		}
 	}
+
 	if !rField.CanSet() {
-		return 0, fmt.Errorf("field %s cannot be set", flag.field.Name)
+		return 0, fmt.Errorf("field %s cannot be set", fieldPathString)
 	}
+
 	if rField.Kind() == reflect.Bool {
-		err := setFieldValue(flag, "true", rField)
+		err := setFieldValue("true", rField)
 		if err != nil {
-			return 0, err
+			return 0, fmt.Errorf("failed to set field %s: %v", fieldPathString, err)
 		}
 		return 1, nil
 	} else if i+1 < len(args) {
 		// Set the value for the option
-		err := setFieldValue(flag, args[i+1], rField)
+		err := setFieldValue(args[i+1], rField)
 		if err != nil {
-			return 0, err
+			return 0, fmt.Errorf("failed to set field %s: %v", fieldPathString, err)
 		}
 		return 2, nil
 	} else {
@@ -143,7 +172,7 @@ func setFieldForArg(flag Flag, name string, i int, args []string, rOpts reflect.
 	}
 }
 
-func setFieldValue(flag Flag, value string, rField reflect.Value) error {
+func setFieldValue(value string, rField reflect.Value) error {
 	// Set the value for the option
 	switch rField.Kind() {
 	case reflect.Bool:
@@ -157,17 +186,17 @@ func setFieldValue(flag Flag, value string, rField reflect.Value) error {
 	case reflect.Int, reflect.Int16, reflect.Int32, reflect.Int64:
 		intValue, err := strconv.ParseInt(value, 10, 64)
 		if err != nil {
-			return fmt.Errorf("invalid value for integer field %s: %s", flag.field.Name, value)
+			return fmt.Errorf("invalid integer (%s)", value)
 		}
 		rField.SetInt(intValue)
 	case reflect.Float64, reflect.Float32:
 		floatValue, err := strconv.ParseFloat(value, 64)
 		if err != nil {
-			return fmt.Errorf("invalid value for float field %s: %s", flag.field.Name, value)
+			return fmt.Errorf("invalid float (%s)", value)
 		}
 		rField.SetFloat(floatValue)
 	default:
-		return fmt.Errorf("unsupported field type %s for field %s", rField.Type().Name(), flag.field.Name)
+		return fmt.Errorf("unsupported field type")
 	}
 
 	return nil

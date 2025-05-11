@@ -10,13 +10,13 @@ func Commands() []command.Command {
 		&command.NoopOptions{},
 	)
 	cmd1 := command.NewCommand(
-		"github-release",
+		"release",
 		"Create a GitHub release",
 		executeGithubRelease,
 		&GithubReleaseOptions{},
 	)
 	cmd2 := command.NewCommand(
-		"github-pr-update",
+		"update-pull-request",
 		"Update a GitHub pull request with the latest changes from the base branch",
 		executeUpdateGithubPRMeta,
 		&GithubPRUpdateOptions{},
