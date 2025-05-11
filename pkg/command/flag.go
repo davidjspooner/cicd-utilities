@@ -153,10 +153,6 @@ func getFlagDefinitions[T any](defaults *T) ([]Flag, error) {
 			}
 		}
 
-		if err != nil {
-			return nil, fmt.Errorf("failed to extract metavar for field %s: %v", arg.field.Name, err)
-		}
-
 		args = append(args, arg)
 	}
 
