@@ -20,7 +20,22 @@ func main() {
 	root := command.NewCommand("", "A utility for CI/CD operations",
 		func(ctx context.Context, options *GlobalOptions, args []string) error {
 			level, err := options.LogOptions.Parse()
-			slog.SetLogLoggerLevel(level)
+			opts := slog.HandlerOptions{
+				Level: level,
+				ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
+					if a.Key == slog.TimeKey {
+						return slog.Attr{} // remove timestamp
+					}
+					return a
+				},
+			}
+
+			// Create a TextHandler with those options
+			handler := slog.NewTextHandler(os.Stdout, &opts)
+			logger := slog.New(handler)
+
+			// Set this logger as the default
+			slog.SetDefault(logger)
 			if err != nil {
 				return err
 			}

@@ -35,8 +35,7 @@ func executeBumpGitTag(ctx context.Context, option *BumpGitTagOptions, args []st
 		return fmt.Errorf("failed to extract version from tag: %v", err)
 	}
 
-	slog.Debug("Latest tag found", "tag", latestTag)
-	slog.Info("Current version", "version", currentVersion.String())
+	slog.Info("Current", "tag", latestTag, "version", currentVersion.String())
 
 	// Get commit messages since the latest tag
 	commitMessages, err := Run("log", fmt.Sprintf("%s..HEAD", latestTag), "--pretty=format:%s")
@@ -72,11 +71,10 @@ func executeBumpGitTag(ctx context.Context, option *BumpGitTagOptions, args []st
 	// Construct the new tag
 	newTag := fmt.Sprintf("%s%s%s", option.Prefix, newVersion.String(), option.Suffix)
 
-	fmt.Printf("Increment: %s\n", increment)
+	slog.Debug("Increment", "reason", increment)
 
 	if option.DryRun {
-		fmt.Println("Dry run enabled.")
-		fmt.Printf("Would create new tag: %s\n", newTag)
+		slog.Info("Dry run enabled", "newTag", newTag)
 		return nil
 	}
 
@@ -88,7 +86,7 @@ func executeBumpGitTag(ctx context.Context, option *BumpGitTagOptions, args []st
 		return fmt.Errorf("failed to push tag: %v", err)
 	}
 
-	fmt.Printf("Successfully created and pushed tag: %s\n", newTag)
+	slog.Info("Tag created and pushed", "tag", newTag)
 	return nil
 }
 
