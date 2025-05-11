@@ -23,18 +23,19 @@ const (
 )
 
 type WrapSpec struct {
-	Width   int
-	Align   Align
-	Color   ColorControl
-	PadChar rune
+	ExactWidth         int
+	MinWidth, MaxWidth int
+	Align              Align
+	Color              ColorControl
+	PadChar            rune
 }
 
 func NewWrapSpec(width int, align Align, color ColorControl, padChar rune) *WrapSpec {
 	w := WrapSpec{
-		Width:   width,
-		Align:   align,
-		Color:   color,
-		PadChar: padChar,
+		ExactWidth: width,
+		Align:      align,
+		Color:      color,
+		PadChar:    padChar,
 	}
 	w.normalizeSpec()
 	return &w
@@ -67,16 +68,6 @@ func (w *WrapSpec) WordWrap(text string) ([]string, error) {
 				}
 				word.WriteString(tok.Value)
 			}
-		case tokenTab:
-			if word.Len() > 0 {
-				if !lb.canFit(wordWidth) {
-					lines = append(lines, lb.flushAsString())
-				}
-				lb.writeString(word.String(), wordWidth)
-				word.Reset()
-				wordWidth = 0
-			}
-			// Removed lb.writeTab() here.
 		case tokenWhitespace:
 			if word.Len() > 0 {
 				if !lb.canFit(wordWidth) {
@@ -91,7 +82,7 @@ func (w *WrapSpec) WordWrap(text string) ([]string, error) {
 			}
 			lb.writeSpace()
 		case tokenOther:
-			if tok.Width > w.Width {
+			if tok.Width > w.ExactWidth {
 				if word.Len() > 0 {
 					if !lb.canFit(wordWidth) {
 						lines = append(lines, lb.flushAsString())
@@ -141,11 +132,11 @@ func isValidSGRCode(code int) bool {
 }
 
 func (s *WrapSpec) normalizeSpec() {
-	if s.Width == 0 {
-		s.Width = math.MaxInt
-	}
 	if s.PadChar == 0 {
 		s.PadChar = ' '
+	}
+	if s.MaxWidth == 0 {
+		s.MaxWidth = math.MaxInt
 	}
 }
 

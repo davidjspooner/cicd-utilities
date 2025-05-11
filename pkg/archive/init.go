@@ -1,9 +1,18 @@
 package archive
 
-import "github.com/davidjspooner/cicd-utilities/pkg/command"
+import (
+	"github.com/davidjspooner/cicd-utilities/pkg/command"
+)
 
 func Commands() []command.Command {
-	commands := []command.Command{}
+
+	archiveCommand := command.NewCommand(
+		"archive",
+		"Archive commands",
+		nil,
+		&command.NoopOptions{},
+	)
+
 	cmd1 := command.NewCommand(
 		"pgp-sign",
 		"Sign files with PGP",
@@ -12,7 +21,6 @@ func Commands() []command.Command {
 			Extension: ".sig",
 		},
 	)
-	commands = append(commands, cmd1)
 	cmd2 := command.NewCommand(
 		"checksum",
 		"Generate checksum(s) for file(s) using a specified algorithm",
@@ -21,7 +29,6 @@ func Commands() []command.Command {
 			Algorithm: "sha256",
 		},
 	)
-	commands = append(commands, cmd2)
 	cmd3 := command.NewCommand(
 		"compress",
 		"Compress files or directories into zip or tar.gz formats",
@@ -31,6 +38,6 @@ func Commands() []command.Command {
 			Replace: false,
 		},
 	)
-	commands = append(commands, cmd3)
-	return commands
+	archiveCommand.SubCommands().MustAdd(cmd1, cmd2, cmd3)
+	return []command.Command{archiveCommand}
 }

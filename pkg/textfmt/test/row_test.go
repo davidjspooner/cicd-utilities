@@ -20,7 +20,7 @@ func (tc *testCase) runTest(t *testing.T) {
 	//make a row of cells
 	row := textfmt.NewRow(textfmt.RowTypeColumns, tc.inputCells...)
 	b := strings.Builder{}
-	err := row.RenderTo(&b, tc.wrapspec)
+	err := row.RenderTo(&b, tc.wrapspec, " | ")
 	if err != nil {
 		if tc.expectedError == "" {
 			t.Errorf("%s: unexpected error:\n  %v", tc.name, err)
@@ -57,9 +57,9 @@ func TestSimpleRowRendering(t *testing.T) {
 	tc := &testCase{
 		name: "Basic row rendering",
 		wrapspec: []*textfmt.WrapSpec{
-			{Width: 20, Align: textfmt.Left, PadChar: ' '},
-			{Width: 16, Align: textfmt.Center, PadChar: ' '},
-			{Width: 16, Align: textfmt.Right, PadChar: ' '},
+			{ExactWidth: 20, Align: textfmt.Left, PadChar: ' '},
+			{ExactWidth: 16, Align: textfmt.Center, PadChar: ' '},
+			{ExactWidth: 16, Align: textfmt.Right, PadChar: ' '},
 		},
 		columnSeperator: " | ",
 		inputCells:      []string{"Column1 is very very long", "Column2", "Column3"},
@@ -76,9 +76,9 @@ func TestMultilineRowRendering(t *testing.T) {
 	tc := &testCase{
 		name: "Multiline row rendering",
 		wrapspec: []*textfmt.WrapSpec{
-			{Width: 20, Align: textfmt.Left, PadChar: ' '},
-			{Width: 16, Align: textfmt.Center, PadChar: ' '},
-			{Width: 16, Align: textfmt.Right, PadChar: ' '},
+			{ExactWidth: 20, Align: textfmt.Left, PadChar: ' '},
+			{ExactWidth: 16, Align: textfmt.Center, PadChar: ' '},
+			{ExactWidth: 16, Align: textfmt.Right, PadChar: ' '},
 		},
 		columnSeperator: " | ",
 		inputCells:      []string{"Column1 is very very long.\\nIt has an explicit line break", "Column2", "Column3"},

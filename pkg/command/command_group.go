@@ -2,6 +2,7 @@ package command
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 )
 
@@ -38,7 +39,6 @@ func (g *CommandGroup) Add(cmds ...any) error {
 				}
 				g.commands = append(g.commands, c)
 			}
-			g.commands = append(g.commands, cmd...)
 		default:
 			return fmt.Errorf("invalid command type: %T", cmd)
 		}
@@ -89,7 +89,7 @@ func (g CommandGroup) findCommand(cmdName string) Command {
 }
 
 // findCommandOrBestMatch finds a command by its name.
-func (g CommandGroup) findCommandOrBestMatch(cmdName string) (Command, error) {
+func (g CommandGroup) findCommandOrBestMatch(prefix, cmdName string) (Command, error) {
 	cmd := g.findCommand(cmdName)
 	if cmd != nil {
 		return cmd, nil
@@ -97,12 +97,19 @@ func (g CommandGroup) findCommandOrBestMatch(cmdName string) (Command, error) {
 
 	match := g.findBestCommandMatch(cmdName, nil)
 	if match.Score == 1000 {
-		return nil, fmt.Errorf("command %s not found. This is a bug", cmdName)
+		return nil, fmt.Errorf("invalid command '%s%s'", prefix, cmdName)
 	}
-	return nil, fmt.Errorf("command %s not found, did you mean %s?", cmdName, strings.Join(match.Path, " "))
+	return nil, fmt.Errorf("invalid command '%s%s', did you mean '%s%s'?", prefix, cmdName, prefix, strings.Join(match.Path, " "))
 }
 
 // Count returns the number of commands in the group.
 func (g CommandGroup) Count() int {
 	return len(g.commands)
+}
+
+func (g CommandGroup) SortAlphabetically() {
+	// Sort the commands alphabetically by their names.
+	sort.Slice(g.commands, func(i, j int) bool {
+		return g.commands[i].Name() < g.commands[j].Name()
+	})
 }

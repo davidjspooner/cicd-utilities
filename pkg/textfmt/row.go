@@ -29,7 +29,7 @@ func NewRow(rowType RowType, cells ...string) *Row {
 	return r
 }
 
-func (r *Row) RenderTo(w io.Writer, wrapSpecs []*WrapSpec) error {
+func (r *Row) RenderTo(w io.Writer, wrapSpecs []*WrapSpec, columnSeperator string) error {
 	for i := range wrapSpecs {
 		wrapSpecs[i].normalizeSpec()
 	}
@@ -60,12 +60,12 @@ func (r *Row) RenderTo(w io.Writer, wrapSpecs []*WrapSpec) error {
 	for i := 0; i < maxLines; i++ {
 		for j, lines := range wrapped {
 			if i < len(lines) {
-				fmt.Fprintf(w, "%-*s", wrapSpecs[j].Width, strings.TrimRight(lines[i], " "))
+				fmt.Fprintf(w, "%-*s", wrapSpecs[j].ExactWidth, strings.TrimRight(lines[i], " "))
 			} else {
-				fmt.Fprintf(w, "%-*s", wrapSpecs[j].Width, "")
+				fmt.Fprintf(w, "%-*s", wrapSpecs[j].ExactWidth, "")
 			}
 			if j < len(wrapped)-1 {
-				fmt.Fprint(w, " | ")
+				fmt.Fprint(w, columnSeperator)
 			}
 		}
 		if i < maxLines-1 {

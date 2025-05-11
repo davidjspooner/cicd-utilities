@@ -12,7 +12,7 @@ type Line struct {
 	width int
 }
 
-func (f *Line) Width(tabStop int) int {
+func (f *Line) Width() int {
 	if f.width > 0 {
 		return f.width
 	}
@@ -26,9 +26,6 @@ func (f *Line) Width(tabStop int) int {
 			break
 		}
 		switch tok.Type {
-		case tokenTab:
-			nextTab := ((width / tabStop) + 1) * tabStop
-			width += nextTab - width
 		default:
 			width += tok.Width
 		}

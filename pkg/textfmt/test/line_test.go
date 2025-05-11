@@ -7,9 +7,9 @@ import (
 )
 
 func TestLineWidth(t *testing.T) {
-	line := &textfmt.Line{Text: "Hello\\tWorld"}
-	width := line.Width(4)
-	if width != 13 {
-		t.Errorf("expected width 13, got %d", width)
+	line := &textfmt.Line{Text: "Hello World"}
+	width := line.Width()
+	if width != 12 {
+		t.Errorf("expected width 12, got %d", width)
 	}
 }

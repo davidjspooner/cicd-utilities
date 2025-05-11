@@ -20,10 +20,10 @@ func NewBlock(input string) *Block {
 	return &Block{Lines: normalizedLines}
 }
 
-func (b *Block) Width(tabStop int) int {
+func (b *Block) Width() int {
 	w := 0
 	for _, l := range b.Lines {
-		w = max(w, l.Width(tabStop))
+		w = max(w, l.Width())
 	}
 	return w
 }

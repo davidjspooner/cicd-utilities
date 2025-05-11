@@ -61,26 +61,6 @@ func (plan *plan) run(ctx context.Context) error {
 	return nil
 }
 
-// renderHelpText displays help information for all commands in the execution plan.
-func (plan *plan) renderHelpText(ctx context.Context) {
-	for _, frame := range plan.steps {
-		cmd := frame.command()
-		options, err := cmd.Flags()
-		if err != nil {
-			continue
-		}
-		cmdName := cmd.Name()
-		cmdDesc := cmd.Help()
-		if cmdDesc == "" {
-			cmdDesc = "No description available"
-		}
-		println(cmdName + ": " + cmdDesc)
-		for _, opt := range options {
-			println("  " + opt.String())
-		}
-	}
-}
-
 // addStep adds a new frame to the execution plan.
 func (plan *plan) addStep(cmd Command) error {
 	common, ok := cmd.(getCommonImpl)
@@ -170,7 +150,12 @@ func buildPlan(root Command, args []string) (*plan, error) {
 		if cmdName == "" {
 			break
 		}
-		cmdDef, err := subCommands.findCommandOrBestMatch(cmdName)
+		prefix := strings.Builder{}
+		for _, cmd := range plan.steps {
+			prefix.WriteString(cmd.command().Name())
+			prefix.WriteString(" ")
+		}
+		cmdDef, err := subCommands.findCommandOrBestMatch(prefix.String(), cmdName)
 		if err != nil {
 			return nil, err
 		}

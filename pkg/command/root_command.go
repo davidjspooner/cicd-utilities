@@ -46,7 +46,7 @@ func Run(ctx context.Context, args []string) error {
 
 	if showHelp {
 		//show help and exit
-		plan.renderHelpText(ctx)
+		renderHelpText(plan)
 		os.Exit(0)
 	}
 

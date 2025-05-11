@@ -9,7 +9,6 @@ type tokenType int
 
 const (
 	tokenEOF        tokenType = iota
-	tokenTab                  // '\\' followed by 't'
 	tokenColor                // ANSI CSI sequences, like "\x1b[31m"
 	tokenWhitespace           // Unicode whitespace
 	tokenOther                // Anything else
@@ -40,11 +39,6 @@ func (s *scanner) nextToken() Token {
 
 	start := s.pos
 	r := s.next()
-
-	if r == '\\' && s.peek() == 't' {
-		s.next() // consume 't'
-		return Token{Type: tokenTab, Value: s.input[start:s.pos], Width: 0}
-	}
 
 	if r == '\x1b' && s.peek() == '[' {
 		s.next() // consume '['

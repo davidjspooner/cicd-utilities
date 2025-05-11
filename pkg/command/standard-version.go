@@ -23,7 +23,7 @@ const (
 
 func VersionCommand() Command {
 	toolname := path.Base(os.Args[0])
-	return NewCommand("version", fmt.Sprintf("Print the version of the %s", toolname),
+	return NewCommand("version", fmt.Sprintf("Print the version of %s", toolname),
 		func(ctx context.Context, options *VersionOptions, args []string) error {
 			if options.Short {
 				fmt.Printf("%s\n", BuildName)

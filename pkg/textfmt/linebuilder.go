@@ -30,7 +30,7 @@ func (b *lineBuilder) flushAsString() string {
 	text := b.line.String()
 	text = strings.TrimRight(text, " \t")
 	text = strings.TrimLeft(text, " ") // Remove surplus spaces at the start of a line
-	result := applyAlignment(text, b.wrapSpec.Width, b.wrapSpec.Align, b.wrapSpec.PadChar)
+	result := applyAlignment(text, b.wrapSpec.ExactWidth, b.wrapSpec.Align, b.wrapSpec.PadChar)
 	if b.wrapSpec.Color == AllowColor && len(b.sgr.attrs) > 0 {
 		result += "\x1b[0m"
 	}
@@ -54,11 +54,11 @@ func (b *lineBuilder) writeSpace() {
 }
 
 func (b *lineBuilder) canFit(w int) bool {
-	return b.width+w <= b.wrapSpec.Width
+	return b.width+w <= b.wrapSpec.ExactWidth
 }
 
 func (b *lineBuilder) remaining() int {
-	return b.wrapSpec.Width - b.width
+	return b.wrapSpec.ExactWidth - b.width
 }
 
 func (b *lineBuilder) len() int {

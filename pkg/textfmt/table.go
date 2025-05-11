@@ -60,31 +60,34 @@ func (t *Table) RenderTo(w io.Writer) error {
 	for i, spec := range t.WrapSpec {
 		temp := *spec // Copy the WrapSpec
 		tempWrapSpecs[i] = &temp
+		tempWrapSpecs[i].ExactWidth = 0 // Initialize ExactWidth to 0
 	}
 
 	// Update the width of the temporary WrapSpecs for columns
 	for _, row := range t.Rows {
 		if row.RowType == RowTypeColumns {
 			for i, block := range row.Columns {
-				tempWrapSpecs[i].Width = max(tempWrapSpecs[i].Width, block.Width(0))
+				tmp := tempWrapSpecs[i]
+				tmp.ExactWidth = max(block.Width(), tmp.ExactWidth)
 			}
 		}
 	}
 
-	for i, spec := range tempWrapSpecs {
-		spec.Width = min(spec.Width, t.WrapSpec[i].Width)
-	}
-
 	totalWidth := 0
-	for _, spec := range tempWrapSpecs {
-		totalWidth += spec.Width
+	for i, tmp := range tempWrapSpecs {
+		if t.WrapSpec[i].ExactWidth == 0 {
+			tmp.ExactWidth = min(max(tmp.ExactWidth, tmp.MinWidth), tmp.MaxWidth)
+		} else {
+			tmp.ExactWidth = t.WrapSpec[i].ExactWidth
+		}
+		totalWidth += tmp.ExactWidth
 	}
 	// Add space for column separators
 	totalWidth += (len(tempWrapSpecs) - 1) * len(t.ColumnSeparator)
 
 	// Create a copy of the WrapSpec for banners
 	tempBannerSpec := *t.BannerSpec // Copy the WrapSpec
-	tempBannerSpec.Width = totalWidth
+	tempBannerSpec.ExactWidth = totalWidth
 
 	// Render each row
 	for _, row := range t.Rows {
@@ -94,9 +97,10 @@ func (t *Table) RenderTo(w io.Writer) error {
 		} else if row.RowType == RowTypeBanner {
 			wrapSpecs = []*WrapSpec{&tempBannerSpec}
 		}
-		if err := row.RenderTo(w, wrapSpecs); err != nil {
+		if err := row.RenderTo(w, wrapSpecs, t.ColumnSeparator); err != nil {
 			return fmt.Errorf("error rendering row: %v", err)
 		}
+		w.Write([]byte("\n"))
 	}
 
 	// Ensure the function always returns a value
