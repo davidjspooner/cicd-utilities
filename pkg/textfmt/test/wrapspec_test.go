@@ -12,30 +12,30 @@ func GenericWrapTestFunction(t *testing.T, testName string, wrapspec *textfmt.Wr
 	overlap := min(len(output), len(expectedOutput))
 	for i := 0; i < overlap; i++ {
 		if output[i] != expectedOutput[i] {
-			t.Errorf("%s: line #%d,expected %q, got %q", testName, i, expectedOutput[i], output[i])
+			t.Errorf("%s: line #%d\n  expected %q\n  got      %q", testName, i, expectedOutput[i], output[i])
 		}
 	}
 	if overlap < len(expectedOutput) {
 		//show extra lines in expected output
 		for i := overlap; i < len(expectedOutput); i++ {
-			t.Errorf("%s: expected extra line #%d: %q", testName, i, expectedOutput[i])
+			t.Errorf("%s: expected extra line #%d:\n  %q", testName, i, expectedOutput[i])
 		}
 	}
 	if overlap < len(output) {
 		//show extra lines in actual output
 		for i := overlap; i < len(output); i++ {
-			t.Errorf("%s: got extra line #%d: %q", testName, i, output[i])
+			t.Errorf("%s: got extra line #%d\n   %q", testName, i, output[i])
 		}
 	}
 	if err != nil {
 		if expectedError == "" {
-			t.Errorf("%s: unexpected error: %v", testName, err)
+			t.Errorf("%s: unexpected error:\n  %v", testName, err)
 		} else if err.Error() != expectedError {
-			t.Errorf("%s: expected error %q, got %q", testName, expectedError, err.Error())
+			t.Errorf("%s: expected error\n   %q\ngot\n   %q", testName, expectedError, err.Error())
 		}
 		return
 	} else if expectedError != "" {
-		t.Errorf("%s: expected error %q, got nil", testName, expectedError)
+		t.Errorf("%s: expected error\n  %q\n  got nil", testName, expectedError)
 		return
 	}
 }
@@ -154,4 +154,18 @@ func TestMultipleNewlinesAndTabs(t *testing.T) {
 	input := "Line1\n\tLine2\n\t\tLine3"
 	expected := []string{"Line1     ", "Line2     ", "Line3     "}
 	GenericWrapTestFunction(t, "Multiple newlines and tabs", wrapspec, input, expected, "")
+}
+
+func TestEmbeddedColorsAllowColorTrue(t *testing.T) {
+	wrapspec := &textfmt.WrapSpec{Width: 10, Align: textfmt.Left, PadChar: ' ', Color: textfmt.AllowColor}
+	input := "\u001b[31mRed\u001b[0m and \u001b[32mGreen\u001b[0m"
+	expected := []string{"\u001b[31mRed\u001b[0m and   ", "\u001b[32mGreen\u001b[0m     "}
+	GenericWrapTestFunction(t, "Embedded colors with AllowColor true", wrapspec, input, expected, "")
+}
+
+func TestEmbeddedColorsAllowColorTrueMultipleLines(t *testing.T) {
+	wrapspec := &textfmt.WrapSpec{Width: 15, Align: textfmt.Left, PadChar: ' ', Color: textfmt.AllowColor}
+	input := "\u001b[31mRed\u001b[0m and \u001b[32mGreen\u001b[0m\n\u001b[34mBlue\u001b[0m"
+	expected := []string{"\u001b[31mRed\u001b[0m and \u001b[32mGreen\u001b[0m  ", "\u001b[34mBlue\u001b[0m          "}
+	GenericWrapTestFunction(t, "Embedded colors with AllowColor true across multiple lines", wrapspec, input, expected, "")
 }

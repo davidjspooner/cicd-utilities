@@ -33,6 +33,9 @@ func (b *lineBuilder) flushAsString() string {
 	}
 	result := applyAlignment(text, b.wrapSpec.Width, b.wrapSpec.Align, b.wrapSpec.PadChar)
 	b.reset()
+	if b.wrapSpec.Color == AllowColor && len(b.sgr.attrs) > 0 {
+		b.line.WriteString(b.sgr.string()) // Reapply color codes for the next line
+	}
 	return result
 }
 
