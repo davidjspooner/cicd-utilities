@@ -1,70 +1,54 @@
 package textfmt
 
-import "strings"
+import (
+	"strings"
+	"unicode"
+)
 
 type Block struct {
 	Lines []*Line
 }
 
-func NewBlock(input string) Block {
+func NewBlock(input string) *Block {
 	trimmed := strings.TrimSpace(input)
 	normalized := collapseBreakableSpaces(trimmed)
 	lines := []*Line{&Line{Text: normalized}}
-	return Block{Lines: lines}
+	return &Block{Lines: lines}
 }
 
-func (b *Block) Width() int {
-	max := 0
+func (b *Block) Width(tabStop int) int {
+	w := 0
 	for _, l := range b.Lines {
-		if w := l.Width(); w > max {
-			max = w
+		w = max(w, l.Width(tabStop))
+	}
+	return w
+}
+
+func (b *Block) WordWrap(width int, tabStop int, align Align, color ColorControl, padChar rune) []string {
+	if padChar == 0 {
+		padChar = ' '
+	}
+	var wrapped []string
+	for _, l := range b.Lines {
+		wrapped = append(wrapped, l.WordWrap(width, tabStop, align, color, padChar)...)
+	}
+	return wrapped
+}
+
+func collapseBreakableSpaces(s string) string {
+	var b strings.Builder
+	b.Grow(len(s))
+	spaceRun := false
+	for _, r := range s {
+		if unicode.Is(unicode.White_Space, r) {
+			if !spaceRun {
+				b.WriteRune(' ')
+				spaceRun = true
+			}
+		} else {
+			b.WriteRune(r)
+			spaceRun = false
 		}
 	}
-	return max
-}
-
-func (b *Block) LineCount() int {
-	return len(b.Lines)
-}
-
-func (b *Block) SetLineCount(n int) {
-	for len(b.Lines) < n {
-		b.Lines = append(b.Lines, &Line{Text: ""})
-	}
-	b.Lines = b.Lines[:n]
-}
-
-func (b *Block) StripColors() {
-	for _, l := range b.Lines {
-		l.StripColors()
-	}
-}
-
-func (b *Block) Pad(width int, align Align, padChar rune) {
-	for _, l := range b.Lines {
-		l.Pad(width, align, padChar)
-	}
-}
-
-func (b *Block) ExpandTabs(tabStop int) {
-	for _, l := range b.Lines {
-		l.ExpandTabs(tabStop)
-	}
-}
-
-func (b *Block) WordWrap(limit int) {
-	var out []*Line
-	for _, l := range b.Lines {
-		out = append(out, l.WordWrap(limit)...)
-	}
-	b.Lines = out
-}
-
-func (b *Block) TrimEmptyLines() {
-	for len(b.Lines) > 0 && b.Lines[0].Width() == 0 {
-		b.Lines = b.Lines[1:]
-	}
-	for len(b.Lines) > 0 && b.Lines[len(b.Lines)-1].Width() == 0 {
-		b.Lines = b.Lines[:len(b.Lines)-1]
-	}
+	return b.String()
 }
