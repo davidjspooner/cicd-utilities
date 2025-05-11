@@ -53,9 +53,9 @@ func (tc *testCase) runTest(t *testing.T) {
 	}
 }
 
-func TestTableRendering(t *testing.T) {
+func TestRowRendering(t *testing.T) {
 	tc := &testCase{
-		name: "Basic table rendering",
+		name: "Basic row rendering",
 		wrapspec: []*textfmt.WrapSpec{
 			{Width: 10, Align: textfmt.Left, PadChar: ' '},
 			{Width: 10, Align: textfmt.Left, PadChar: ' '},
