@@ -6,10 +6,12 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/davidjspooner/cicd-utilities/pkg/archive"
+	"github.com/davidjspooner/cicd-utilities/internal/archive"
+	"github.com/davidjspooner/cicd-utilities/internal/git"
+	"github.com/davidjspooner/cicd-utilities/internal/github"
+	"github.com/davidjspooner/cicd-utilities/internal/man"
+	"github.com/davidjspooner/cicd-utilities/internal/template"
 	"github.com/davidjspooner/cicd-utilities/pkg/command"
-	"github.com/davidjspooner/cicd-utilities/pkg/git"
-	"github.com/davidjspooner/cicd-utilities/pkg/github"
 )
 
 type GlobalOptions struct {
@@ -47,9 +49,19 @@ func main() {
 	versionCommand := command.VersionCommand()
 	gitCommands := git.Commands()
 	archiveCommands := archive.Commands()
-	subcommands := command.RootCommand.SubCommands()
 	githubCommands := github.Commands()
-	subcommands.MustAdd(versionCommand, gitCommands, archiveCommands, githubCommands)
+	templateCommands := template.Commands()
+	manCommands := man.Commands()
+
+	subcommands := command.RootCommand.SubCommands()
+	subcommands.MustAdd(
+		versionCommand,
+		gitCommands,
+		archiveCommands,
+		githubCommands,
+		manCommands,
+		templateCommands,
+	)
 
 	err := command.Run(context.Background(), os.Args[1:])
 	if err != nil {

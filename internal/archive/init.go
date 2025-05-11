@@ -13,15 +13,7 @@ func Commands() []command.Command {
 		&command.NoopOptions{},
 	)
 
-	cmd1 := command.NewCommand(
-		"pgp-sign",
-		"Sign files with PGP",
-		pgpSignFiles,
-		&SignOptions{
-			Extension: ".sig",
-		},
-	)
-	cmd2 := command.NewCommand(
+	checksumCmd := command.NewCommand(
 		"checksum",
 		"Generate checksum(s) for file(s) using a specified algorithm",
 		executeChecksum,
@@ -29,7 +21,7 @@ func Commands() []command.Command {
 			Algorithm: "sha256",
 		},
 	)
-	cmd3 := command.NewCommand(
+	compressCmd := command.NewCommand(
 		"compress",
 		"Compress files or directories into zip or tar.gz formats",
 		compressCommand,
@@ -38,6 +30,6 @@ func Commands() []command.Command {
 			Replace: false,
 		},
 	)
-	archiveCommand.SubCommands().MustAdd(cmd1, cmd2, cmd3)
+	archiveCommand.SubCommands().MustAdd(checksumCmd, compressCmd)
 	return []command.Command{archiveCommand}
 }

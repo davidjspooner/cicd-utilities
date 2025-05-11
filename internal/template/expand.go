@@ -1,4 +1,4 @@
-package text
+package template
 
 import (
 	"context"
@@ -116,9 +116,7 @@ func expandTemplateFile(source, target, templateType string) error {
 	return nil
 }
 
-func listSupportedTemplateTypes(ctx context.Context, options *command.NoopOptions, args []string) error {
-	print("Supported template types:\n")
-	print("  go/text\n")
-	print("  go/html\n")
+func templateManPage(ctx context.Context, options *command.NoopOptions, args []string) error {
+	print("# TODO")
 	return nil
 }

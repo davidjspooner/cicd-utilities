@@ -1,16 +1,10 @@
-package text
+package template
 
 import (
 	"github.com/davidjspooner/cicd-utilities/pkg/command"
 )
 
 func Commands() []command.Command {
-	textCommand := command.NewCommand(
-		"text",
-		"text commands ( including templates )",
-		nil,
-		&command.NoopOptions{},
-	)
 	templateCommand := command.NewCommand(
 		"template",
 		"Template commands",
@@ -24,12 +18,11 @@ func Commands() []command.Command {
 		&expandOptions{},
 	)
 	cmd2 := command.NewCommand(
-		"support",
-		"List supported template types",
-		listSupportedTemplateTypes,
+		"man",
+		"Manual for template file syntax",
+		templateManPage,
 		&command.NoopOptions{},
 	)
-	templateCommand.SubCommands().MustAdd(cmd1)
-	textCommand.SubCommands().MustAdd(templateCommand)
-	return []command.Command{textCommand, cmd2}
+	templateCommand.SubCommands().MustAdd(cmd1, cmd2)
+	return []command.Command{templateCommand}
 }
