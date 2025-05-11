@@ -97,7 +97,7 @@ func executeGithubRelease(ctx context.Context, option *GithubReleaseOptions, arg
 	return nil
 }
 
-func uploadFileToGubHubRelease(ctx context.Context, file string, releaseID int, token string, repo string) error {
+func uploadFileToGubHubRelease(_ context.Context, file string, releaseID int, token string, repo string) error {
 	url := fmt.Sprintf("https://uploads.github.com/repos/%s/releases/%d/assets?name=%s", repo, releaseID, file)
 
 	fileData, err := os.ReadFile(file)

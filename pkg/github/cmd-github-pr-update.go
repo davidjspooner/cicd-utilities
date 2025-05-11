@@ -57,7 +57,7 @@ func executeUpdateGithubPRMeta(ctx context.Context, option *GithubPRUpdateOption
 	newTitle := fmt.Sprintf("%s: update based on commits", bump)
 
 	if option.DryRun {
-		slog.Warn("Dry run mode enabled", "pr", option.PRNumber, "title", newTitle)
+		slog.Warn("--dry-run", "pr", option.PRNumber, "title", newTitle)
 		return nil
 	}
 
@@ -93,7 +93,7 @@ func getCommitMessages(prNumber, token, repo string) []string {
 	return messages
 }
 
-func updatePullRequest(ctx context.Context, prNumber, token, repo, title string) error {
+func updatePullRequest(_ context.Context, prNumber, token, repo, title string) error {
 	url := fmt.Sprintf("https://api.github.com/repos/%s/pulls/%s", repo, prNumber)
 
 	pr := struct {
@@ -121,7 +121,7 @@ func updatePullRequest(ctx context.Context, prNumber, token, repo, title string)
 	return nil
 }
 
-func getPullRequestTitle(ctx context.Context, prNumber, token, repo string) (string, error) {
+func getPullRequestTitle(_ context.Context, prNumber, token, repo string) (string, error) {
 	url := fmt.Sprintf("https://api.github.com/repos/%s/pulls/%s", repo, prNumber)
 
 	req, _ := http.NewRequest("GET", url, nil)

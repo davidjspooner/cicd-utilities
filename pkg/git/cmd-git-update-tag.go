@@ -74,7 +74,7 @@ func executeBumpGitTag(ctx context.Context, option *BumpGitTagOptions, args []st
 	slog.Debug("Increment", "reason", increment)
 
 	if option.DryRun {
-		slog.Info("Dry run enabled", "newTag", newTag)
+		slog.Info("--dry-run", "newTag", newTag)
 		return nil
 	}
 
@@ -90,7 +90,7 @@ func executeBumpGitTag(ctx context.Context, option *BumpGitTagOptions, args []st
 	return nil
 }
 
-func getLatestTag(ctx context.Context, branch string) (string, error) {
+func getLatestTag(_ context.Context, branch string) (string, error) {
 
 	commits, err := Run("rev-list", "--tags", "--no-walk", "--abbrev=0", "--date-order", branch)
 	if err != nil {
