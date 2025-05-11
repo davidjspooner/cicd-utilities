@@ -43,21 +43,21 @@ func GenericWrapTestFunction(t *testing.T, testName string, wrapspec *textfmt.Wr
 func TestRealTabsAndNewlines(t *testing.T) {
 	wrapspec := &textfmt.WrapSpec{Width: 10, Align: textfmt.Left, PadChar: ' '}
 	input := "Hello\tWorld\nThis is\ta test"
-	expected := []string{"Hello     ", "World This", " is a test"}
+	expected := []string{"Hello     ", "World This", "is a test "}
 	GenericWrapTestFunction(t, "Real tabs and newlines treated as spaces", wrapspec, input, expected, "")
 }
 
 func TestRunsOfSpaces(t *testing.T) {
 	wrapspec := &textfmt.WrapSpec{Width: 10, Align: textfmt.Left, PadChar: ' '}
 	input := "Hello    World  This   is  a    test"
-	expected := []string{"Hello     ", "World This", " is a test"}
+	expected := []string{"Hello     ", "World This", "is a test "}
 	GenericWrapTestFunction(t, "Runs of spaces replaced with single space", wrapspec, input, expected, "")
 }
 
 func TestLinesSplitByNewline(t *testing.T) {
 	wrapspec := &textfmt.WrapSpec{Width: 10, Align: textfmt.Left, PadChar: ' '}
 	input := "Hello World\nThis is a test"
-	expected := []string{"Hello     ", "World This", " is a test"}
+	expected := []string{"Hello     ", "World This", "is a test "}
 	GenericWrapTestFunction(t, "Lines split by newline", wrapspec, input, expected, "")
 }
 

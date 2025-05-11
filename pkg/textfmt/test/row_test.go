@@ -53,18 +53,40 @@ func (tc *testCase) runTest(t *testing.T) {
 	}
 }
 
-func TestRowRendering(t *testing.T) {
+func TestSimpleRowRendering(t *testing.T) {
 	tc := &testCase{
 		name: "Basic row rendering",
 		wrapspec: []*textfmt.WrapSpec{
-			{Width: 10, Align: textfmt.Left, PadChar: ' '},
-			{Width: 10, Align: textfmt.Left, PadChar: ' '},
-			{Width: 10, Align: textfmt.Left, PadChar: ' '},
+			{Width: 20, Align: textfmt.Left, PadChar: ' '},
+			{Width: 16, Align: textfmt.Center, PadChar: ' '},
+			{Width: 16, Align: textfmt.Right, PadChar: ' '},
 		},
 		columnSeperator: " | ",
-		inputCells:      []string{"Column1", "Column2", "Column3"},
+		inputCells:      []string{"Column1 is very very long", "Column2", "Column3"},
 		expectedLines: []string{
-			"Column1   | Column2   | Column3   ",
+			"Column1 is very very |     Column2      |          Column3",
+			"long                 |                  |                 ",
+		},
+		expectedError: "",
+	}
+	tc.runTest(t)
+}
+
+func TestMultilineRowRendering(t *testing.T) {
+	tc := &testCase{
+		name: "Multiline row rendering",
+		wrapspec: []*textfmt.WrapSpec{
+			{Width: 20, Align: textfmt.Left, PadChar: ' '},
+			{Width: 16, Align: textfmt.Center, PadChar: ' '},
+			{Width: 16, Align: textfmt.Right, PadChar: ' '},
+		},
+		columnSeperator: " | ",
+		inputCells:      []string{"Column1 is very very long.\\nIt has an explicit line break", "Column2", "Column3"},
+		expectedLines: []string{
+			"Column1 is very very |     Column2      |          Column3",
+			"long.                |                  |                 ",
+			"It has an explicit   |                  |                 ",
+			"line break           |                  |                 ",
 		},
 		expectedError: "",
 	}

@@ -12,6 +12,7 @@ const (
 	Left Align = iota
 	Center
 	Right
+	Unpadded
 )
 
 type ColorControl int
@@ -23,20 +24,20 @@ const (
 
 type WrapSpec struct {
 	Width   int
-	TabStop int
 	Align   Align
 	Color   ColorControl
 	PadChar rune
 }
 
-func NewWrapSpec(width, tabStop int, align Align, color ColorControl, padChar rune) *WrapSpec {
-	return &WrapSpec{
+func NewWrapSpec(width int, align Align, color ColorControl, padChar rune) *WrapSpec {
+	w := WrapSpec{
 		Width:   width,
-		TabStop: tabStop,
 		Align:   align,
 		Color:   color,
 		PadChar: padChar,
 	}
+	w.normalizeSpec()
+	return &w
 }
 
 // WordWrap wraps raw input into aligned, color-aware, padded lines.
@@ -75,7 +76,7 @@ func (w *WrapSpec) WordWrap(text string) ([]string, error) {
 				word.Reset()
 				wordWidth = 0
 			}
-			lb.writeTab()
+			// Removed lb.writeTab() here.
 		case tokenWhitespace:
 			if word.Len() > 0 {
 				if !lb.canFit(wordWidth) {
@@ -146,9 +147,6 @@ func (s *WrapSpec) normalizeSpec() {
 	if s.PadChar == 0 {
 		s.PadChar = ' '
 	}
-	if s.TabStop == 0 {
-		s.TabStop = 4
-	}
 }
 
 func applyAlignment(s string, width int, align Align, padChar rune) string {
@@ -189,6 +187,8 @@ func applyAlignment(s string, width int, align Align, padChar rune) string {
 		left := padding / 2
 		right := padding - left
 		return strings.Repeat(string(padChar), left) + s + strings.Repeat(string(padChar), right)
+	case Unpadded:
+		return s // Return the string as-is without any padding or trimming
 	default:
 		return s
 	}
